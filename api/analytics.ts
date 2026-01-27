@@ -15,7 +15,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(405).json({ error: 'Method Not Allowed' });
     }
 
-    const { period } = req.query;
+    const { type, period } = req.query;
 
     if (!propertyId || !credentials.client_email || !credentials.private_key) {
         return res.status(500).json({
@@ -114,4 +114,3 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(500).json({ error: 'GA4 API 호출 중 오류가 발생했습니다.', details: error.message });
     }
 }
-```
