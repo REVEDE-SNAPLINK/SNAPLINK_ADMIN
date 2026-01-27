@@ -15,7 +15,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(405).json({ error: 'Method Not Allowed' });
     }
 
-    const { type, period } = req.query;
+    const { period } = req.query;
 
     if (!propertyId || !credentials.client_email || !credentials.private_key) {
         return res.status(500).json({

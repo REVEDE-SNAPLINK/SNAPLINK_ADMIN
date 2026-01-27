@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { getAcquisitionData } from '@/api/analytics';
 import {
@@ -40,7 +40,7 @@ export default function AcquisitionDashboard() {
                                     paddingAngle={5}
                                     dataKey="value"
                                 >
-                                    {data.channels.map((entry: any, index: number) => (
+                                    {data.channels.map((_: any, index: number) => (
                                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                     ))}
                                 </Pie>
