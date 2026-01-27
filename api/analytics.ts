@@ -80,9 +80,38 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             charts: charts
         };
 
-        return res.status(200).json(result);
+        // 3. 요청 타입(type)에 따라 대시보드 탭별 기대 구조로 반환
+        let finalResult: any = result;
+
+        switch (type) {
+            case 'acquisition':
+                finalResult = {
+                    channels: [], // 실제 데이터 연동 로직 추가 가능
+                    links: []
+                };
+                break;
+            case 'funnel':
+                finalResult = {
+                    bookingFunnel: [],
+                    chatFunnel: []
+                };
+                break;
+            case 'creator':
+                finalResult = {
+                    metrics: result.metrics,
+                    quality: []
+                };
+                break;
+            case 'general':
+            default:
+                finalResult = result;
+                break;
+        }
+
+        return res.status(200).json(finalResult);
     } catch (error: any) {
         console.error('GA4 API Error:', error);
         return res.status(500).json({ error: 'GA4 API 호출 중 오류가 발생했습니다.', details: error.message });
     }
 }
+```
