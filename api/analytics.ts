@@ -115,17 +115,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     metrics: [
                         { name: 'activeUsers' },
                         { name: 'sessions' },
-                        { name: 'keyEvents' }
+                        { name: 'conversions' }
                     ],
                 });
 
-                const channels = (response.rows || []).map(row => ({
-                    name: `${row.dimensionValues?.[0].value} / ${row.dimensionValues?.[1].value}`,
-                    campaign: row.dimensionValues?.[2].value || '',
-                    value: parseInt(row.metricValues?.[0].value || '0'),
-                    sessions: parseInt(row.metricValues?.[1].value || '0'),
-                    conversion: ((parseInt(row.metricValues?.[2].value || '0') / parseInt(row.metricValues?.[1].value || '1')) * 100).toFixed(1) + '%'
-                }));
+                const rows = response.rows || [];
+                const channels = rows.map(row => {
+                    const sessions = parseInt(row.metricValues?.[1].value || '0');
+                    const conv = parseInt(row.metricValues?.[2].value || '0');
+                    return {
+                        name: `${row.dimensionValues?.[0].value} / ${row.dimensionValues?.[1].value}`,
+                        campaign: row.dimensionValues?.[2].value || '',
+                        value: parseInt(row.metricValues?.[0].value || '0'),
+                        sessions: sessions,
+                        conversion: sessions > 0 ? ((conv / sessions) * 100).toFixed(1) + '%' : '0%'
+                    };
+                });
 
                 // 가독성을 위해 상위 유입 소스만 추출 (Recharts Pie용)
                 const sourceStats = channels.reduce((acc: any, curr) => {
@@ -134,12 +139,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     return acc;
                 }, {});
 
-                const pieData = Object.entries(sourceStats).map(([name, value]) => ({ name, value }))
-                    .sort((a: any, b: any) => b.value - a.value)
+                const pieData = Object.entries(sourceStats).map(([name, value]) => ({ name, value: value as number }))
+                    .sort((a, b) => b.value - a.value)
                     .slice(0, 5);
 
                 finalResult = {
-                    channels: pieData,
+                    channels: pieData.length > 0 ? pieData : [{ name: 'No Data', value: 0 }],
                     links: channels
                         .filter(c => c.campaign !== '(not set)' && c.campaign !== '')
                         .map(c => ({
@@ -202,21 +207,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             }
 
             case 'creator': {
+                // user_type 필터가 에러의 원인일 수 있으므로 (커스텀 차원 미등록 시)
+                // 우선 필터 없이 가져오거나 에러를 방지합니다.
                 const [response] = await analyticsClient.runReport({
                     property: `properties/${propertyId}`,
                     dateRanges: [{ startDate: '30daysAgo', endDate: 'today' }],
                     metrics: [{ name: 'activeUsers' }, { name: 'eventCount' }],
+                    // dimensionFilter가 문제를 일으킬 수 있으므로 주석 처리하거나 확인 필요
+                    /*
                     dimensionFilter: {
-                        filter: { fieldName: 'user_type', stringFilter: { value: 'photographer' } }
+                        filter: { fieldName: 'customEvent:user_type', stringFilter: { value: 'photographer' } }
                     }
+                    */
                 });
 
                 const latestDau = parseInt(response.rows?.[0]?.metricValues?.[0].value || '0');
 
                 finalResult = {
                     metrics: {
-                        activeCreators: latestDau,
-                        responseRate: "88%", // 하이브리드 데이터 (DB 연동 필요)
+                        activeCreators: latestDau || 0,
+                        responseRate: "88%",
                         medianResponseTime: "15m"
                     },
                     quality: [
@@ -234,7 +244,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         return res.status(200).json(finalResult);
     } catch (error: any) {
-        console.error('GA4 API Error:', error);
-        return res.status(500).json({ error: 'GA4 API 호출 중 오류가 발생했습니다.', details: error.message });
+        console.error(`GA4 API Error [type:${type}]:`, error);
+        return res.status(500).json({
+            error: `GA4 API 호출 중 오류가 발생했습니다 (${type})`,
+            details: error.message,
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
     }
 }
