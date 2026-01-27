@@ -1,7 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ProtectedRoute } from '@/layouts/MainLayout';
 import LoginPage from '@/pages/Login';
-import Dashboard from '@/pages/Dashboard';
 import ChatPage from '@/pages/Chat';
 import SchedulePage from '@/pages/Schedule';
 import ReportsPage from '@/pages/Reports';
@@ -10,6 +9,11 @@ import ReservationsPage from '@/pages/Reservations';
 import { useAuthStore } from '@/store/authStore';
 import { useEffect } from 'react';
 import { PageHeader } from '@/components/common/PageHeader';
+
+import GeneralDashboard from '@/pages/dashboard/General';
+import AcquisitionDashboard from '@/pages/dashboard/Acquisition';
+import FunnelDashboard from '@/pages/dashboard/Funnel';
+import CreatorDashboard from '@/pages/dashboard/Creator';
 
 // Placeholder for other pages
 const Placeholder = ({ title }: { title: string }) => (
@@ -58,8 +62,12 @@ function App() {
 
         {/* Protected Routes */}
         <Route element={<ProtectedRoute />}>
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/" element={<Navigate to="/dashboard/general" replace />} />
+          <Route path="/dashboard" element={<Navigate to="/dashboard/general" replace />} />
+          <Route path="/dashboard/general" element={<GeneralDashboard />} />
+          <Route path="/dashboard/acquisition" element={<AcquisitionDashboard />} />
+          <Route path="/dashboard/funnel" element={<FunnelDashboard />} />
+          <Route path="/dashboard/creator" element={<CreatorDashboard />} />
           <Route path="/reports" element={<ReportsPage />} />
           <Route path="/shootings" element={<ShootingsPage />} />
           <Route path="/schedule" element={<SchedulePage />} />
