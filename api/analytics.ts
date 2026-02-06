@@ -230,7 +230,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 const createFunnel = (stages: any[], baseKey: string) => stages.map((s, i) => ({
                     stage: s.stage,
                     count: eventData[s.key] || 0,
-                    percentage: i === 0 ? 100 : Math.round(((eventData[s.key] || 0) / (eventData[baseKey] || 1)) * 100)
+                    percentage: i === 0 ? 100 : (eventData[baseKey] > 0 ? Math.round(((eventData[s.key] || 0) / eventData[baseKey]) * 100) : 0)
                 }));
 
                 finalResult = {

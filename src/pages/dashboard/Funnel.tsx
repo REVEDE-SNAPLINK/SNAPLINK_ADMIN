@@ -127,7 +127,7 @@ export default function FunnelDashboard() {
                     <div className="flex items-center gap-4 relative">
                         {(data.inquiryFunnel || []).map((step: any, index: number) => {
                             const prevStep = data.inquiryFunnel[index - 1];
-                            const conversionFromPrev = prevStep ? Math.round((step.count / prevStep.count) * 100) : 100;
+                            const conversionFromPrev = prevStep ? (prevStep.count > 0 ? Math.round((step.count / prevStep.count) * 100) : 0) : 100;
                             return (
                                 <React.Fragment key={step.stage}>
                                     {index > 0 && (
