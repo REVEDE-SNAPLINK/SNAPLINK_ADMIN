@@ -40,7 +40,7 @@ export default function AcquisitionDashboard() {
                                     paddingAngle={5}
                                     dataKey="value"
                                 >
-                                    {data.channels.map((_: any, index: number) => (
+                                    {data.channels?.map((_: any, index: number) => (
                                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                     ))}
                                 </Pie>
@@ -61,8 +61,8 @@ export default function AcquisitionDashboard() {
                                 <XAxis type="number" hide />
                                 <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fill: '#4b5563', fontSize: 13 }} />
                                 <Tooltip cursor={{ fill: 'transparent' }} />
-                                <Bar dataKey="conversion" fill="#00A980" radius={[0, 4, 4, 0]} barSize={20}>
-                                    <LabelList dataKey="conversion" position="right" formatter={(v: any) => `${v}%`} fill="#4b5563" style={{ fontSize: '11px', fontWeight: 'bold' }} />
+                                <Bar dataKey="conversionRate" fill="#00A980" radius={[0, 4, 4, 0]} barSize={20}>
+                                    <LabelList dataKey="conversionRate" position="right" fill="#4b5563" style={{ fontSize: '11px', fontWeight: 'bold' }} />
                                 </Bar>
                             </BarChart>
                         </ResponsiveContainer>

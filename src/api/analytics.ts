@@ -14,10 +14,14 @@ export const getGeneralKPI = async (period: string): Promise<any> => {
         console.warn('GA4 API 연동 전이거나 오류 발생. Mock 데이터를 반환합니다.');
         return {
             metrics: {
-                DAU: 1250, WAU: 8400, MAU: 32000,
-                stickiness: "3.9%",
-                avgSessionDuration: "4m 32s", // session_end의 duration_seconds 기반
-                crashFreeUsers: "99.8%", // Crashlytics 데이터 기반
+                DAU: 1250, dauChange: 12.5,
+                WAU: 4800, wauChange: -5.2,
+                MAU: 8200, mauChange: 8.4,
+                stickiness: 15.2,
+                avgSessionDuration: "4m 32s",
+                avgSessionDurationValue: 272,
+                sessionsPerUser: 2.4,
+                crashFreeUsers: 99.8,
                 retention: {
                     d1: 42.5,
                     d7: 18.2,
@@ -25,13 +29,20 @@ export const getGeneralKPI = async (period: string): Promise<any> => {
                 }
             },
             charts: [
-                { name: 'Mon', dau: 1100, sessions: 2800 },
-                { name: 'Tue', dau: 1300, sessions: 3200 },
-                { name: 'Wed', dau: 1250, sessions: 3100 },
-                { name: 'Thu', dau: 1400, sessions: 3500 },
-                { name: 'Fri', dau: 1350, sessions: 3300 },
-                { name: 'Sat', dau: 1100, sessions: 2900 },
-                { name: 'Sun', dau: 1150, sessions: 3000 },
+                { name: 'Mon', dau: 1100, sessions: 2800, sessionDuration: 240 },
+                { name: 'Tue', dau: 1300, sessions: 3200, sessionDuration: 280 },
+                { name: 'Wed', dau: 1250, sessions: 3100, sessionDuration: 260 },
+                { name: 'Thu', dau: 1400, sessions: 3500, sessionDuration: 300 },
+                { name: 'Fri', dau: 1350, sessions: 3300, sessionDuration: 290 },
+                { name: 'Sat', dau: 1100, sessions: 2900, sessionDuration: 250 },
+                { name: 'Sun', dau: 1150, sessions: 3000, sessionDuration: 255 },
+            ],
+            cohortData: [
+                { date: '2024-01-20', newUsers: 100, d0: 100, d1: 45, d7: 18, d30: 8 },
+                { date: '2024-01-21', newUsers: 120, d0: 100, d1: 42, d7: 15, d30: 7 },
+                { date: '2024-01-22', newUsers: 110, d0: 100, d1: 48, d7: 20, d30: 9 },
+                { date: '2024-01-23', newUsers: 130, d0: 100, d1: 40, d7: 14, d30: 6 },
+                { date: '2024-01-24', newUsers: 105, d0: 100, d1: 44, d7: 17, d30: 8 },
             ]
         };
     }
@@ -66,15 +77,15 @@ export const getFunnelData = async (period: string): Promise<any> => {
     } catch (error) {
         return {
             bookingFunnel: [
-                { stage: '프로필 조회 (profile_view)', count: 10000, percentage: 100 },
-                { stage: '예약 시도 (booking_intent)', count: 4500, percentage: 45 },
-                { stage: '예약 요청 (submitted)', count: 1200, percentage: 12 },
-                { stage: '계약 성사 (confirmed)', count: 800, percentage: 8 },
+                { stage: '프로필 조회', count: 10000, percentage: 100 },
+                { stage: '예약 시도', count: 4500, percentage: 45 },
+                { stage: '예약 요청', count: 1200, percentage: 12 },
+                { stage: '계약 성사', count: 800, percentage: 8 },
             ],
             chatFunnel: [
-                { stage: '채팅 시작 (chat_initiated)', count: 5000, percentage: 100 },
-                { stage: '작가 응답 (photographer_response)', count: 3500, percentage: 70 },
-                { stage: '예약 확정 (booking_confirmed)', count: 1800, percentage: 36 },
+                { stage: '채팅 시작', count: 5000, percentage: 100 },
+                { stage: '작가 응답', count: 3500, percentage: 70 },
+                { stage: '예약 확정', count: 1800, percentage: 36 },
             ]
         };
     }

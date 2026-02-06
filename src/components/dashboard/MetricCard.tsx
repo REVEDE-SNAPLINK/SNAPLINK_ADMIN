@@ -9,14 +9,16 @@ interface MetricCardProps {
 
 export const MetricCard: React.FC<MetricCardProps> = ({ title, value, change, isPositive }) => {
     return (
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-            <p className="text-sm font-medium text-gray-500 mb-1">{title}</p>
-            <div className="flex items-end gap-2">
-                <h3 className="text-2xl font-bold text-gray-900">{value}</h3>
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 transition-all hover:shadow-md">
+            <p className="text-sm font-semibold text-gray-400 mb-2 uppercase tracking-wider">{title}</p>
+            <div className="flex items-baseline gap-3">
+                <h3 className="text-3xl font-black text-gray-900 tracking-tight">{value}</h3>
                 {change && (
-                    <span className={`text-xs font-semibold mb-1 ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
-                        {isPositive ? '↑' : '↓'} {change}
-                    </span>
+                    <div className={`flex items-center gap-0.5 text-sm font-black px-2 py-0.5 rounded-full ${isPositive ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'
+                        }`}>
+                        <span>{isPositive ? '↑' : '↓'}</span>
+                        <span>{change}%</span>
+                    </div>
                 )}
             </div>
         </div>
