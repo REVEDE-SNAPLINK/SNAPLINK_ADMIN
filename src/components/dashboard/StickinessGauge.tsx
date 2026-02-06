@@ -5,7 +5,9 @@ interface StickinessGaugeProps {
 }
 
 export const StickinessGauge: React.FC<StickinessGaugeProps> = ({ value }) => {
-    const percentage = Math.min(Math.max(value, 0), 100);
+    // value가 "15.2%" 같은 문자열일 경우를 대비해 처리
+    const numericValue = typeof value === 'string' ? parseFloat(value) : value;
+    const percentage = isNaN(numericValue) ? 0 : Math.min(Math.max(numericValue, 0), 100);
 
     return (
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 h-full flex flex-col justify-center">

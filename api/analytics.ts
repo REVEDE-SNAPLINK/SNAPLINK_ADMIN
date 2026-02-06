@@ -112,7 +112,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 const latestDau = charts[charts.length - 1]?.dau || 0;
 
                 const totalActiveUsersMonth = parseInt(response.totals?.[0]?.metricValues?.[0]?.value || '1');
-                const totalActiveUsersWeek = parseInt(response.totals?.[1]?.metricValues?.[0]?.value || '0');
+                const totalActiveUsersWeek = parseInt(response.totals?.[1]?.metricValues?.[0]?.value || '1');
+                const totalSessionsWeek = parseInt(response.totals?.[1]?.metricValues?.[1]?.value || '0');
 
                 // 방어 코드: 분모가 0이 되지 않도록 처리 (0 나누기 방지)
                 const avgSessionSec = parseFloat(latestRow?.metricValues?.[2].value || '0');
@@ -127,9 +128,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                         DAU: latestDau,
                         WAU: totalActiveUsersWeek,
                         MAU: totalActiveUsersMonth,
-                        stickiness: ((latestDau / totalActiveUsersMonth) * 100).toFixed(1) + "%",
+                        stickiness: parseFloat(((latestDau / totalActiveUsersMonth) * 100).toFixed(1)),
                         avgSessionDuration: formatDuration(avgSessionSec),
                         avgUserEngagement: formatDuration(totalEngagementSec / activeUsers), // 인당 정밀 체류시간
+                        sessionsPerUser: parseFloat((totalSessionsWeek / totalActiveUsersWeek).toFixed(2)),
                         crashFreeUsers: crashFreeRate,
                         retention: {
                             d1: 42.5,
@@ -209,8 +211,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     dimensionFilter: {
                         orGroup: {
                             expressions: [
-                                { filter: { fieldName: 'eventName', inListFilter: { values: ['photographer_profile_view', 'booking_intent', 'booking_request_submitted', 'booking_confirmed'] } } },
-                                { filter: { fieldName: 'eventName', inListFilter: { values: ['chat_initiated', 'chat_message_sent', 'photographer_response'] } } }
+                                // 탐색/커뮤니티 관련 이벤트
+                                { filter: { fieldName: 'eventName', inListFilter: { values: ['feed_view', 'post_view', 'creator_card_exposed', 'creator_profile_click', 'inquiry_intent'] } } },
+                                // 커뮤니티 상호작용 관련 이벤트
+                                { filter: { fieldName: 'eventName', inListFilter: { values: ['post_creation', 'post_like', 'post_comment', 'post_share', 'creator_tagged'] } } },
+                                // 문의 관련 이벤트
+                                { filter: { fieldName: 'eventName', inListFilter: { values: ['inquiry_started', 'first_message_sent', 'photographer_responded', 'thread_active'] } } }
                             ]
                         }
                     }
@@ -228,17 +234,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 }));
 
                 finalResult = {
-                    bookingFunnel: createFunnel([
-                        { stage: 'Profile View', key: 'photographer_profile_view' },
-                        { stage: 'Booking Intent', key: 'booking_intent' },
-                        { stage: 'Request Submitted', key: 'booking_request_submitted' },
-                        { stage: 'Confirmed', key: 'booking_confirmed' }
-                    ], 'photographer_profile_view'),
-                    chatFunnel: createFunnel([
-                        { stage: 'Chat Initiated', key: 'chat_initiated' },
-                        { stage: 'Message Sent', key: 'chat_message_sent' },
-                        { stage: 'Responded', key: 'photographer_response' }
-                    ], 'chat_initiated')
+                    // (A) 작가/콘텐츠 탐색 퍼널
+                    discoveryFunnel: createFunnel([
+                        { stage: 'Feed View', key: 'feed_view' },
+                        { stage: 'Post View', key: 'post_view' },
+                        { stage: 'Card Exposed', key: 'creator_card_exposed' },
+                        { stage: 'Profile Click', key: 'creator_profile_click' },
+                        { stage: 'Inquiry Intent', key: 'inquiry_intent' }
+                    ], 'feed_view'),
+
+                    // (B) 커뮤니티 상호작용 (Vertical Bar Chart용)
+                    communityInteractions: [
+                        { name: 'Post Creation', count: eventData['post_creation'] || 0 },
+                        { name: 'Likes', count: eventData['post_like'] || 0 },
+                        { name: 'Comments', count: eventData['post_comment'] || 0 },
+                        { name: 'Shares', count: eventData['post_share'] || 0 },
+                        { name: 'Tagged', count: eventData['creator_tagged'] || 0 }
+                    ],
+
+                    // 4) 문의 퍼널
+                    inquiryFunnel: createFunnel([
+                        { stage: 'Inquiry Started', key: 'inquiry_started' },
+                        { stage: '1st Msg Sent', key: 'first_message_sent' },
+                        { stage: 'Artist Responded', key: 'photographer_responded' },
+                        { stage: 'Thread Active', key: 'thread_active' }
+                    ], 'inquiry_started')
                 };
                 break;
             }

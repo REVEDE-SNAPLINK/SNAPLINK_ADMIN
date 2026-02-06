@@ -52,8 +52,8 @@ export const CohortTable: React.FC<CohortTableProps> = ({ data }) => {
                     <tbody className="divide-y divide-gray-50">
                         {(data || []).map((row, idx) => (
                             <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
-                                <td className="py-3 font-semibold text-gray-600">{row.date}</td>
-                                <td className="py-3 text-right font-black text-gray-900">{row.newUsers.toLocaleString()}</td>
+                                <td className="py-3 font-semibold text-gray-600 border-r border-gray-50">{row.date}</td>
+                                <td className="py-3 px-6 text-right font-black text-gray-900 border-r border-gray-100">{row.newUsers.toLocaleString()}</td>
                                 <td className={`py-3 text-center font-black ${getBgColor(row.d0)}`}>{row.d0}%</td>
                                 <td className={`py-3 text-center font-black ${getBgColor(row.d1)}`}>{row.d1}%</td>
                                 <td className={`py-3 text-center font-black ${getBgColor(row.d7)}`}>{row.d7}%</td>
