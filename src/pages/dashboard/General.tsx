@@ -28,12 +28,12 @@ export default function GeneralDashboard() {
             {/* Top Row: Core Metrics & Stickiness */}
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
                 <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <MetricCard title="DAU (일일 활성)" value={data.metrics.DAU.toLocaleString()} change={data.metrics.dauChange} isPositive={data.metrics.dauChange > 0} />
-                    <MetricCard title="WAU (주간 활성)" value={data.metrics.WAU.toLocaleString()} change={data.metrics.wauChange} isPositive={data.metrics.wauChange > 0} />
-                    <MetricCard title="MAU (월간 활성)" value={data.metrics.MAU.toLocaleString()} change={data.metrics.mauChange} isPositive={data.metrics.mauChange > 0} />
+                    <MetricCard title="DAU (일일 활성)" value={data.metrics?.DAU?.toLocaleString() ?? "0"} change={data.metrics?.dauChange} isPositive={data.metrics?.dauChange > 0} />
+                    <MetricCard title="WAU (주간 활성)" value={data.metrics?.WAU?.toLocaleString() ?? "0"} change={data.metrics?.wauChange} isPositive={data.metrics?.wauChange > 0} />
+                    <MetricCard title="MAU (월간 활성)" value={data.metrics?.MAU?.toLocaleString() ?? "0"} change={data.metrics?.mauChange} isPositive={data.metrics?.mauChange > 0} />
                 </div>
                 <div className="lg:col-span-1">
-                    <StickinessGauge value={data.metrics.stickiness} />
+                    <StickinessGauge value={data.metrics?.stickiness} />
                 </div>
             </div>
 
@@ -47,7 +47,7 @@ export default function GeneralDashboard() {
                         </div>
                         <div className="text-right">
                             <span className="text-[10px] font-bold text-gray-400 block uppercase">Avg Sessions/User</span>
-                            <span className="text-xl font-black text-blue-600">{data.metrics.sessionsPerUser}</span>
+                            <span className="text-xl font-black text-blue-600">{data.metrics?.sessionsPerUser ?? "0.0"}</span>
                         </div>
                     </div>
                     <div className="h-[300px]">
@@ -76,7 +76,7 @@ export default function GeneralDashboard() {
                         </div>
                         <div className="text-right">
                             <span className="text-[10px] font-bold text-gray-400 block uppercase">Current Avg</span>
-                            <span className="text-xl font-black text-[#00A980]">{data.metrics.avgSessionDuration}</span>
+                            <span className="text-xl font-black text-[#00A980]">{data.metrics?.avgSessionDuration ?? "0s"}</span>
                         </div>
                     </div>
                     <div className="h-[300px]">
@@ -109,22 +109,22 @@ export default function GeneralDashboard() {
                             <h3 className="text-lg font-bold text-gray-800">앱 안정성 (Crash-free)</h3>
                             <p className="text-xs text-gray-400 mt-1">99% 이상 유지 목표</p>
                         </div>
-                        <div className={`px-2 py-1 rounded text-[10px] font-black uppercase tracking-widest ${data.metrics.crashFreeUsers >= 99 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                        <div className={`px-2 py-1 rounded text-[10px] font-black uppercase tracking-widest ${data.metrics?.crashFreeUsers >= 99 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
                             }`}>
-                            {data.metrics.crashFreeUsers >= 99 ? 'Stable' : 'Warning'}
+                            {data.metrics?.crashFreeUsers >= 99 ? 'Stable' : 'Warning'}
                         </div>
                     </div>
                     <div className="flex flex-col items-center py-8">
-                        <div className={`text-5xl font-black mb-2 ${data.metrics.crashFreeUsers >= 99 ? 'text-[#00A980]' : 'text-red-500'
+                        <div className={`text-5xl font-black mb-2 ${data.metrics?.crashFreeUsers >= 99 ? 'text-[#00A980]' : 'text-red-500'
                             }`}>
-                            {data.metrics.crashFreeUsers}%
+                            {data.metrics?.crashFreeUsers ?? "0"}%
                         </div>
                         <p className="text-sm font-bold text-gray-400">무장애 사용자 비율</p>
                     </div>
                     <div className="w-full bg-gray-100 rounded-full h-2">
                         <div
-                            className={`h-2 rounded-full ${data.metrics.crashFreeUsers >= 99 ? 'bg-[#00A980]' : 'bg-red-500'}`}
-                            style={{ width: `${data.metrics.crashFreeUsers}%` }}
+                            className={`h-2 rounded-full ${data.metrics?.crashFreeUsers >= 99 ? 'bg-[#00A980]' : 'bg-red-500'}`}
+                            style={{ width: `${data.metrics?.crashFreeUsers ?? 0}%` }}
                         />
                     </div>
                 </div>

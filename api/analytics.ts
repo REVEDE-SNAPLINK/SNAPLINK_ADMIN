@@ -137,7 +137,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                             d30: 8.4
                         }
                     },
-                    charts: charts
+                    charts: charts,
+                    cohortData: [
+                        { date: '2024-01-20', newUsers: 100, d0: 100, d1: 45, d7: 18, d30: 8 },
+                        { date: '2024-01-21', newUsers: 120, d0: 100, d1: 42, d7: 15, d30: 7 },
+                        { date: '2024-01-22', newUsers: 110, d0: 100, d1: 48, d7: 20, d30: 9 },
+                        { date: '2024-01-23', newUsers: 130, d0: 100, d1: 40, d7: 14, d30: 6 },
+                        { date: '2024-01-24', newUsers: 105, d0: 100, d1: 44, d7: 17, d30: 8 },
+                    ]
                 };
                 break;
             }

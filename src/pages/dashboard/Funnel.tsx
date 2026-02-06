@@ -14,8 +14,8 @@ export default function FunnelDashboard() {
 
     if (!data) return <div className="p-8">Loading...</div>;
 
-    const totalBookingConversion = data.bookingFunnel[data.bookingFunnel.length - 1].percentage;
-    const totalChatConversion = data.chatFunnel[data.chatFunnel.length - 1].percentage;
+    const totalBookingConversion = data.bookingFunnel?.[data.bookingFunnel.length - 1]?.percentage ?? 0;
+    const totalChatConversion = data.chatFunnel?.[data.chatFunnel.length - 1]?.percentage ?? 0;
 
     const funnelColors = ['#00A980', '#00C495', '#33D4AA', '#66E4BF'];
 
@@ -47,7 +47,7 @@ export default function FunnelDashboard() {
                             <YAxis hide />
                             <Tooltip cursor={{ fill: '#f9fafb' }} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} />
                             <Bar dataKey="count" radius={[10, 10, 0, 0]} barSize={100}>
-                                {data.bookingFunnel.map((_: any, index: number) => (
+                                {(data.bookingFunnel || []).map((_: any, index: number) => (
                                     <Cell key={`cell-${index}`} fill={funnelColors[index % funnelColors.length]} />
                                 ))}
                                 <LabelList
@@ -62,7 +62,7 @@ export default function FunnelDashboard() {
                 </div>
 
                 <div className="flex items-center gap-4 relative">
-                    {data.bookingFunnel.map((step: any, index: number) => {
+                    {(data.bookingFunnel || []).map((step: any, index: number) => {
                         const prevStep = data.bookingFunnel[index - 1];
                         const conversionFromPrev = prevStep ? Math.round((step.count / prevStep.count) * 100) : 100;
                         return (

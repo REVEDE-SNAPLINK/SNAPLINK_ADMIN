@@ -87,7 +87,7 @@ export default function AcquisitionDashboard() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-50">
-                            {data.links.map((link: any) => (
+                            {(data.links || []).map((link: any) => (
                                 <tr key={link.name} className="hover:bg-gray-50 transition-colors">
                                     <td className="py-4 pl-2 font-medium text-gray-900">{link.name}</td>
                                     <td className="py-4 text-gray-700 font-semibold">{link.users?.toLocaleString() || 0}</td>
