@@ -1,4 +1,48 @@
 import axios from 'axios';
+import { BigQuery } from '@google-cloud/bigquery';
+import { format, subDays } from 'date-fns';
+
+// BigQuery 설정 (기존 GA4 인증 정보 재사용)
+const projectId = process.env.BIGQUERY_PROJECT_ID;
+const credentials = {
+    client_email: process.env.GA4_CLIENT_EMAIL,
+    private_key: process.env.GA4_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+};
+
+const bigquery = new BigQuery({
+    projectId,
+    credentials
+});
+
+/**
+ * BigQuery에서 Crashlytics 데이터를 직접 계산하여 가져오는 함수
+ */
+async function fetchCrashFreeRate(): Promise<number> {
+    const startDate = format(subDays(new Date(), 7), 'yyyyMMdd');
+    const endDate = format(new Date(), 'yyyyMMdd');
+
+    const query = `
+        SELECT
+          IFNULL(
+            ROUND(
+              (1 - COUNT(DISTINCT CASE WHEN is_fatal = true THEN user_pseudo_id END) / 
+              NULLIF(COUNT(DISTINCT user_pseudo_id), 0)) * 100, 
+              2
+            ), 
+            100
+          ) as rate
+        FROM \`${projectId}.firebase_crashlytics.events_*\`
+        WHERE _TABLE_SUFFIX BETWEEN '${startDate}' AND '${endDate}'
+    `;
+
+    try {
+        const [rows] = await bigquery.query({ query });
+        return rows[0]?.rate || 100;
+    } catch (err) {
+        console.error("BigQuery Crash-free Rate Query Error:", err);
+        return 99.8; // 오류 시 기본값 반환
+    }
+}
 
 // Mock API for GA4 Data
 export interface AnalyticsData {
@@ -9,9 +53,19 @@ export interface AnalyticsData {
 export const getGeneralKPI = async (period: string): Promise<any> => {
     try {
         const response = await axios.get(`/api/analytics?type=general&period=${period}`);
+
+        // 실시간 앱 안정성 데이터 반영
+        const crashFreeRate = await fetchCrashFreeRate();
+        if (response.data && response.data.metrics) {
+            response.data.metrics.crashFreeUsers = crashFreeRate;
+        }
+
         return response.data;
     } catch (error) {
         console.warn('GA4 API 연동 전이거나 오류 발생. Mock 데이터를 반환합니다.');
+
+        const crashFreeRate = await fetchCrashFreeRate();
+
         return {
             metrics: {
                 DAU: 1250, dauChange: 12.5,
@@ -21,7 +75,7 @@ export const getGeneralKPI = async (period: string): Promise<any> => {
                 avgSessionDuration: "4m 32s",
                 avgSessionDurationValue: 272,
                 sessionsPerUser: 2.4,
-                crashFreeUsers: 99.8,
+                crashFreeUsers: crashFreeRate,
                 retention: {
                     d1: 42.5,
                     d7: 18.2,
