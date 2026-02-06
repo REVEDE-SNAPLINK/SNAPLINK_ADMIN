@@ -227,11 +227,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     return acc;
                 }, {});
 
-                const createFunnel = (stages: any[], baseKey: string) => stages.map((s, i) => ({
-                    stage: s.stage,
-                    count: eventData[s.key] || 0,
-                    percentage: i === 0 ? 100 : (eventData[baseKey] > 0 ? Math.round(((eventData[s.key] || 0) / eventData[baseKey]) * 100) : 0)
-                }));
+                const createFunnel = (stages: any[], baseKey: string) => {
+                    const baseCount = eventData[baseKey] || 0;
+                    return stages.map((s, i) => {
+                        const count = eventData[s.key] || 0;
+                        return {
+                            stage: s.stage,
+                            count: count,
+                            percentage: baseCount > 0 ? Math.round((count / baseCount) * 100) : 0
+                        };
+                    });
+                };
 
                 finalResult = {
                     // (A) 작가/콘텐츠 탐색 퍼널

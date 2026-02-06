@@ -132,8 +132,9 @@ export default function FunnelDashboard() {
                                 <React.Fragment key={step.stage}>
                                     {index > 0 && (
                                         <div className="flex-1 h-px bg-gray-100 relative">
-                                            <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-white px-2 text-[10px] font-black text-blue-600 border border-blue-100 rounded-full">
-                                                {conversionFromPrev}%
+                                            <div className={`absolute -top-3 left-1/2 -translate-x-1/2 px-2 text-[10px] font-black border rounded-full ${conversionFromPrev > 100 ? 'bg-red-50 text-red-600 border-red-100' : 'bg-white text-blue-600 border-blue-100'
+                                                }`}>
+                                                {conversionFromPrev}% {conversionFromPrev > 100 && '↑'}
                                             </div>
                                         </div>
                                     )}
