@@ -97,20 +97,22 @@ export default function FunnelDashboard() {
                         <div className="bg-blue-50 px-4 py-2 rounded-xl text-right">
                             <span className="text-[10px] font-black text-blue-600 block mb-0.5 uppercase tracking-widest">Active Rate</span>
                             <span className="text-3xl font-black text-blue-600">
-                                {data.inquiryFunnel?.[data.inquiryFunnel.length - 1]?.percentage ?? 0}%
+                                {data.inquiryFunnel?.steps?.[0]?.count > 0
+                                    ? Math.round(((data.inquiryFunnel?.final?.[0]?.count || 0) / data.inquiryFunnel.steps[0].count) * 100)
+                                    : 0}%
                             </span>
                         </div>
                     </div>
 
                     <div className="h-[350px] mb-12">
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={data.inquiryFunnel} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                            <BarChart data={data.inquiryFunnel?.steps} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
                                 <XAxis dataKey="stage" axisLine={false} tickLine={false} tick={{ fill: '#4b5563', fontSize: 13, fontWeight: 'bold' }} />
                                 <YAxis hide />
                                 <Tooltip cursor={{ fill: '#f9fafb' }} />
                                 <Bar dataKey="count" radius={[10, 10, 0, 0]} barSize={100} minPointSize={2}>
-                                    {(data.inquiryFunnel || []).map((_: any, index: number) => (
+                                    {(data.inquiryFunnel?.steps || []).map((_: any, index: number) => (
                                         <Cell key={`cell-${index}`} fill={blueColors[index % blueColors.length]} />
                                     ))}
                                     <LabelList
