@@ -125,8 +125,8 @@ export default function FunnelDashboard() {
                     </div>
 
                     <div className="flex items-center gap-4 relative">
-                        {(data.inquiryFunnel || []).map((step: any, index: number) => {
-                            const prevStep = data.inquiryFunnel[index - 1];
+                        {(data.inquiryFunnel?.steps || []).map((step: any, index: number) => {
+                            const prevStep = data.inquiryFunnel.steps[index - 1];
                             const conversionFromPrev = prevStep ? (prevStep.count > 0 ? Math.round((step.count / prevStep.count) * 100) : 0) : 100;
                             return (
                                 <React.Fragment key={step.stage}>
@@ -143,12 +143,26 @@ export default function FunnelDashboard() {
                                             }`}>
                                             {index + 1}
                                         </div>
-                                        <p className="text-[11px] font-black text-gray-400 mb-1 uppercase text-center">{step.stage}</p>
+                                        <p className="text-[11px] font-black text-gray-400 mb-1 uppercase text-center leading-tight h-6 flex items-center">{step.stage}</p>
                                         <p className="text-lg font-black text-gray-900">{step.count.toLocaleString()}</p>
                                     </div>
                                 </React.Fragment>
                             );
                         })}
+
+                        {/* Branched Final Stages */}
+                        <div className="flex-1 h-px bg-gray-100 relative" />
+                        <div className="flex flex-col gap-4">
+                            {data.inquiryFunnel?.final?.map((f: any) => (
+                                <div key={f.stage} className={`flex items-center gap-3 p-3 rounded-xl border ${f.isPositive ? 'bg-green-50 border-green-100' : 'bg-red-50 border-red-100'}`}>
+                                    <div className={`w-2 h-2 rounded-full ${f.isPositive ? 'bg-green-500' : 'bg-red-500'}`} />
+                                    <div>
+                                        <p className={`text-[10px] font-black uppercase ${f.isPositive ? 'text-green-600' : 'text-red-600'}`}>{f.stage}</p>
+                                        <p className="text-sm font-black text-gray-900">{f.count.toLocaleString()}</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </div>
             </div>

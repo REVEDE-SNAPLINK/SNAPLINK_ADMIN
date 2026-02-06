@@ -74,72 +74,118 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         switch (type) {
             case 'general': {
+                // 증감률 계산을 위해 더 넓은 날짜 범위 조회 (최근 60일)
                 const [response] = await analyticsClient.runReport({
                     property: `properties/${propertyId}`,
                     dateRanges: [
-                        { startDate: '30daysAgo', endDate: 'today', name: 'month' },
-                        { startDate: '7daysAgo', endDate: 'today', name: 'week' }
+                        { startDate: '30daysAgo', endDate: 'today', name: 'current_month' },
+                        { startDate: '60daysAgo', endDate: '31daysAgo', name: 'prev_month' },
+                        { startDate: '7daysAgo', endDate: 'today', name: 'current_week' },
+                        { startDate: '14daysAgo', endDate: '8daysAgo', name: 'prev_week' }
                     ],
                     metrics: [
                         { name: 'activeUsers' },
                         { name: 'sessions' },
                         { name: 'averageSessionDuration' },
-                        { name: 'userEngagementDuration' } // 정밀 체류 시간(초) 추가
+                        { name: 'userEngagementDuration' }
                     ],
                     dimensions: [{ name: 'date' }],
                 });
 
                 const rows = response.rows || [];
                 const sevenDaysAgoStr = format(subDays(new Date(), 7), 'yyyyMMdd');
+                const yesterdayStr = format(subDays(new Date(), 1), 'yyyyMMdd');
+                const dayBeforeYesterdayStr = format(subDays(new Date(), 2), 'yyyyMMdd');
 
+                // 차트 데이터 (최근 7일)
                 const charts = rows
                     .filter(row => row.dimensionValues?.[0].value && row.dimensionValues[0].value >= sevenDaysAgoStr)
                     .reduce((acc: any[], row) => {
                         const date = row.dimensionValues?.[0].value || '';
-                        if (!acc.find(item => item.rawDate === date)) {
-                            acc.push({
-                                rawDate: date,
-                                name: formatDate(date),
-                                dau: parseInt(row.metricValues?.[0].value || '0'),
-                                sessions: parseInt(row.metricValues?.[1].value || '0')
-                            });
-                        }
+                        acc.push({
+                            rawDate: date,
+                            name: formatDate(date),
+                            dau: parseInt(row.metricValues?.[0].value || '0'),
+                            sessions: parseInt(row.metricValues?.[1].value || '0'),
+                            sessionDuration: parseInt(row.metricValues?.[2].value || '0')
+                        });
                         return acc;
                     }, [])
                     .sort((a, b) => a.rawDate.localeCompare(b.rawDate));
 
+                // DAU 증감률 (어제 vs 그저께)
+                const yesterdayDau = parseInt(rows.find(r => r.dimensionValues?.[0].value === yesterdayStr)?.metricValues?.[0].value || '0');
+                const dayBeforeYesterdayDau = parseInt(rows.find(r => r.dimensionValues?.[0].value === dayBeforeYesterdayStr)?.metricValues?.[0].value || '1');
+                const dauChange = parseFloat((((yesterdayDau - dayBeforeYesterdayDau) / dayBeforeYesterdayDau) * 100).toFixed(1));
+
+                // WAU/MAU 수치 (Totals 기반)
+                const mau = parseInt(response.totals?.find(t => t.dimensionValues?.[0].value === 'current_month')?.metricValues?.[0].value || '0');
+                const prevMau = parseInt(response.totals?.find(t => t.dimensionValues?.[0].value === 'prev_month')?.metricValues?.[0].value || '1');
+                const wau = parseInt(response.totals?.find(t => t.dimensionValues?.[0].value === 'current_week')?.metricValues?.[0].value || '0');
+                const prevWau = parseInt(response.totals?.find(t => t.dimensionValues?.[0].value === 'prev_week')?.metricValues?.[0].value || '1');
+
+                const mauChange = parseFloat((((mau - prevMau) / prevMau) * 100).toFixed(1));
+                const wauChange = parseFloat((((wau - prevWau) / prevWau) * 100).toFixed(1));
+
+                // 기타 지표
                 const latestRow = rows[rows.length - 1];
-                const latestDau = charts[charts.length - 1]?.dau || 0;
-
-                const totalActiveUsersMonth = parseInt(response.totals?.[0]?.metricValues?.[0]?.value || '1');
-                const totalActiveUsersWeek = parseInt(response.totals?.[1]?.metricValues?.[0]?.value || '1');
-                const totalSessionsWeek = parseInt(response.totals?.[1]?.metricValues?.[1]?.value || '0');
-
-                // 방어 코드: 분모가 0이 되지 않도록 처리 (0 나누기 방지)
+                const totalSessionsWeek = parseInt(response.totals?.find(t => t.dimensionValues?.[0].value === 'current_week')?.metricValues?.[1].value || '0');
                 const avgSessionSec = parseFloat(latestRow?.metricValues?.[2].value || '0');
                 const totalEngagementSec = parseFloat(latestRow?.metricValues?.[3].value || '0');
                 const activeUsers = parseInt(latestRow?.metricValues?.[0].value || '1');
 
-                // 실시간 앱 안정성 데이터 반영
                 const crashFreeRate = await fetchCrashFreeRate();
+
+                // 탐색 깊이 퍼널 (Screens per session 용)
+                const [funnelResponse] = await analyticsClient.runReport({
+                    property: `properties/${propertyId}`,
+                    dateRanges: [{ startDate: '30daysAgo', endDate: 'today' }],
+                    dimensions: [{ name: 'eventName' }],
+                    metrics: [{ name: 'totalUsers' }],
+                    dimensionFilter: {
+                        orGroup: {
+                            expressions: [
+                                { filter: { fieldName: 'eventName', stringFilter: { value: 'app_open' } } },
+                                { filter: { fieldName: 'eventName', stringFilter: { value: 'search_photographer' } } },
+                                { filter: { fieldName: 'eventName', stringFilter: { value: 'photographer_profile_view' } } },
+                                { filter: { fieldName: 'eventName', stringFilter: { value: 'chat_initiated' } } },
+                                { filter: { fieldName: 'eventName', stringFilter: { value: 'booking_request_submitted' } } }
+                            ]
+                        }
+                    }
+                });
+
+                const fData = (funnelResponse.rows || []).reduce((acc: any, row) => {
+                    acc[row.dimensionValues?.[0].value || ''] = parseInt(row.metricValues?.[0].value || '0');
+                    return acc;
+                }, {});
+
+                const baseF = fData['app_open'] || 1;
+                const screensFunnel = [
+                    { stage: 'App Open', count: fData['app_open'] || 0, percentage: 100 },
+                    { stage: 'Search', count: fData['search_photographer'] || 0, percentage: Math.round(((fData['search_photographer'] || 0) / baseF) * 100) },
+                    { stage: 'Profile', count: fData['photographer_profile_view'] || 0, percentage: Math.round(((fData['photographer_profile_view'] || 0) / baseF) * 100) },
+                    { stage: 'Inquiry', count: fData['chat_initiated'] || 0, percentage: Math.round(((fData['chat_initiated'] || 0) / baseF) * 100) },
+                    { stage: 'Booking', count: fData['booking_request_submitted'] || 0, percentage: Math.round(((fData['booking_request_submitted'] || 0) / baseF) * 100) },
+                ];
 
                 finalResult = {
                     metrics: {
-                        DAU: latestDau,
-                        WAU: totalActiveUsersWeek,
-                        MAU: totalActiveUsersMonth,
-                        stickiness: parseFloat(((latestDau / totalActiveUsersMonth) * 100).toFixed(1)),
+                        DAU: yesterdayDau,
+                        dauChange: dauChange,
+                        WAU: wau,
+                        wauChange: wauChange,
+                        MAU: mau,
+                        mauChange: mauChange,
+                        stickiness: parseFloat(((yesterdayDau / (mau || 1)) * 100).toFixed(1)),
                         avgSessionDuration: formatDuration(avgSessionSec),
-                        avgUserEngagement: formatDuration(totalEngagementSec / activeUsers), // 인당 정밀 체류시간
-                        sessionsPerUser: parseFloat((totalSessionsWeek / totalActiveUsersWeek).toFixed(2)),
+                        avgUserEngagement: formatDuration(totalEngagementSec / activeUsers),
+                        sessionsPerUser: parseFloat((totalSessionsWeek / (wau || 1)).toFixed(2)),
                         crashFreeUsers: crashFreeRate,
-                        retention: {
-                            d1: 42.5,
-                            d7: 18.2,
-                            d30: 8.4
-                        }
+                        retention: { d1: 42.5, d7: 18.2, d30: 8.4 }
                     },
                     charts: charts,
+                    screensFunnel: screensFunnel,
                     cohortData: [
                         { date: '2024-01-20', newUsers: 100, d0: 100, d1: 45, d7: 18, d30: 8 },
                         { date: '2024-01-21', newUsers: 120, d0: 100, d1: 42, d7: 15, d30: 7 },
@@ -257,13 +303,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                         { name: 'Chat Start', count: eventData['chat_initiated'] || 0 }
                     ],
 
-                    // 4) 문의 퍼널
-                    inquiryFunnel: createFunnel([
-                        { stage: 'Chat Initiated', key: 'chat_initiated' },
-                        { stage: 'Msg Sent', key: 'chat_message_sent' },
-                        { stage: 'Artist Response', key: 'photographer_response' },
-                        { stage: 'Booking Confirm', key: 'booking_confirmed' }
-                    ], 'chat_initiated')
+                    // 2.3 & 5) 예약 퍼널 (확정/취소 분기 반영)
+                    inquiryFunnel: {
+                        steps: createFunnel([
+                            { stage: 'Chat Initiated', key: 'chat_initiated' },
+                            { stage: 'Msg Sent', key: 'chat_message_sent' },
+                            { stage: 'Artist Response', key: 'photographer_response' },
+                            { stage: 'Request Submit', key: 'booking_request_submitted' }
+                        ], 'chat_initiated'),
+                        final: [
+                            { stage: 'Booking Confirmed', count: eventData['booking_confirmed'] || 0, isPositive: true },
+                            { stage: 'Cancelled', count: (eventData['booking_cancelled'] || 0), isPositive: false }
+                        ]
+                    }
                 };
                 break;
             }
