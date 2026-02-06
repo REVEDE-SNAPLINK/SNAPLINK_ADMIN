@@ -86,28 +86,28 @@ export default function GeneralDashboard() {
                             <div>
                                 <div className="flex justify-between items-center text-sm mb-1">
                                     <span className="text-gray-600 font-medium">Day 1 (일일 리텐션)</span>
-                                    <span className="font-bold text-gray-900">{data.metrics.retention.d1}%</span>
+                                    <span className="font-bold text-gray-900">{data.metrics.retention?.d1 || 0}%</span>
                                 </div>
                                 <div className="w-full bg-gray-100 rounded-full h-1.5">
-                                    <div className="bg-[#00A980] h-1.5 rounded-full" style={{ width: `${data.metrics.retention.d1}%` }}></div>
+                                    <div className="bg-[#00A980] h-1.5 rounded-full" style={{ width: `${data.metrics.retention?.d1 || 0}%` }}></div>
                                 </div>
                             </div>
                             <div>
                                 <div className="flex justify-between items-center text-sm mb-1">
                                     <span className="text-gray-600 font-medium">Day 7 (주간 리텐션)</span>
-                                    <span className="font-bold text-gray-900">{data.metrics.retention.d7}%</span>
+                                    <span className="font-bold text-gray-900">{data.metrics.retention?.d7 || 0}%</span>
                                 </div>
                                 <div className="w-full bg-gray-100 rounded-full h-1.5">
-                                    <div className="bg-[#00A980] h-1.5 rounded-full" style={{ width: `${data.metrics.retention.d7}%` }}></div>
+                                    <div className="bg-[#00A980] h-1.5 rounded-full" style={{ width: `${data.metrics.retention?.d7 || 0}%` }}></div>
                                 </div>
                             </div>
                             <div>
                                 <div className="flex justify-between items-center text-sm mb-1">
                                     <span className="text-gray-600 font-medium">Day 30 (월간 리텐션)</span>
-                                    <span className="font-bold text-gray-900">{data.metrics.retention.d30}%</span>
+                                    <span className="font-bold text-gray-900">{data.metrics.retention?.d30 || 0}%</span>
                                 </div>
                                 <div className="w-full bg-gray-100 rounded-full h-1.5">
-                                    <div className="bg-[#00A980] h-1.5 rounded-full" style={{ width: `${data.metrics.retention.d30}%` }}></div>
+                                    <div className="bg-[#00A980] h-1.5 rounded-full" style={{ width: `${data.metrics.retention?.d30 || 0}%` }}></div>
                                 </div>
                             </div>
                         </div>

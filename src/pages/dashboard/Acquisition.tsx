@@ -90,8 +90,8 @@ export default function AcquisitionDashboard() {
                             {data.links.map((link: any) => (
                                 <tr key={link.name} className="hover:bg-gray-50 transition-colors">
                                     <td className="py-4 pl-2 font-medium text-gray-900">{link.name}</td>
-                                    <td className="py-4 text-gray-700 font-semibold">{link.users.toLocaleString()}</td>
-                                    <td className="py-4 text-gray-700">{link.conversionRate}%</td>
+                                    <td className="py-4 text-gray-700 font-semibold">{link.users?.toLocaleString() || 0}</td>
+                                    <td className="py-4 text-gray-700">{link.conversionRate || 0}%</td>
                                     <td className="py-4">
                                         <span className={`px-2 py-1 rounded-full text-[10px] font-bold ${link.status === 'Excellent' ? 'bg-green-100 text-green-700' :
                                             link.status === 'Good' ? 'bg-blue-100 text-blue-700' :

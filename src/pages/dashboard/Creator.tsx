@@ -58,28 +58,28 @@ export default function CreatorDashboard() {
                         <div>
                             <div className="flex justify-between items-center mb-2">
                                 <span className="text-gray-600 font-medium text-sm">1시간 내 응답 (골든 타임)</span>
-                                <span className="text-gray-900 font-bold">{data.responseDetails.within1Hour}%</span>
+                                <span className="text-gray-900 font-bold">{data.responseDetails?.within1Hour || 0}%</span>
                             </div>
                             <div className="w-full bg-gray-100 rounded-full h-2.5">
-                                <div className="bg-[#00A980] h-2.5 rounded-full" style={{ width: `${data.responseDetails.within1Hour}%` }}></div>
+                                <div className="bg-[#00A980] h-2.5 rounded-full" style={{ width: `${data.responseDetails?.within1Hour || 0}%` }}></div>
                             </div>
                         </div>
                         <div>
                             <div className="flex justify-between items-center mb-2">
                                 <span className="text-gray-600 font-medium text-sm">3시간 내 응답</span>
-                                <span className="text-gray-900 font-bold">{data.responseDetails.within3Hours}%</span>
+                                <span className="text-gray-900 font-bold">{data.responseDetails?.within3Hours || 0}%</span>
                             </div>
                             <div className="w-full bg-gray-100 rounded-full h-2.5">
-                                <div className="bg-blue-500 h-2.5 rounded-full" style={{ width: `${data.responseDetails.within3Hours}%` }}></div>
+                                <div className="bg-blue-500 h-2.5 rounded-full" style={{ width: `${data.responseDetails?.within3Hours || 0}%` }}></div>
                             </div>
                         </div>
                         <div>
                             <div className="flex justify-between items-center mb-2">
                                 <span className="text-gray-600 font-medium text-sm">3시간 초과 응답</span>
-                                <span className="text-gray-900 font-bold">{data.responseDetails.over3Hours}%</span>
+                                <span className="text-gray-900 font-bold">{data.responseDetails?.over3Hours || 0}%</span>
                             </div>
                             <div className="w-full bg-gray-100 rounded-full h-2.5">
-                                <div className="bg-red-400 h-2.5 rounded-full" style={{ width: `${data.responseDetails.over3Hours}%` }}></div>
+                                <div className="bg-red-400 h-2.5 rounded-full" style={{ width: `${data.responseDetails?.over3Hours || 0}%` }}></div>
                             </div>
                         </div>
                         <div className="pt-4 border-t border-gray-50 mt-4">
