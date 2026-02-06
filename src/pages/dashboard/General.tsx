@@ -24,16 +24,16 @@ export default function GeneralDashboard() {
 
             {/* Metric Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                <MetricCard title="DAU (일일 활성 사용자)" value={data.metrics.DAU} change="12%" isPositive={true} />
-                <MetricCard title="WAU (주간 활성 사용자)" value={data.metrics.WAU} change="5%" isPositive={true} />
-                <MetricCard title="MAU (월간 활성 사용자)" value={data.metrics.MAU} change="8%" isPositive={true} />
+                <MetricCard title="DAU (일일 활성 사용자)" value={data.metrics.DAU.toLocaleString()} change="12%" isPositive={true} />
+                <MetricCard title="WAU (주간 활성 사용자)" value={data.metrics.WAU.toLocaleString()} change="5%" isPositive={true} />
+                <MetricCard title="MAU (월간 활성 사용자)" value={data.metrics.MAU.toLocaleString()} change="8%" isPositive={true} />
                 <MetricCard title="Stickiness (DAU/MAU)" value={data.metrics.stickiness} change="0.2%" isPositive={true} />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
                 {/* DAU Trend Chart */}
                 <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                    <h3 className="text-lg font-bold mb-6 text-gray-800">활성 사용자 추이</h3>
+                    <h3 className="text-lg font-bold mb-6 text-gray-800">활성 사용자 및 세션 추이</h3>
                     <div className="h-[300px]">
                         <ResponsiveContainer width="100%" height="100%">
                             <AreaChart data={data.charts}>
@@ -42,49 +42,73 @@ export default function GeneralDashboard() {
                                         <stop offset="5%" stopColor="#00A980" stopOpacity={0.1} />
                                         <stop offset="95%" stopColor="#00A980" stopOpacity={0} />
                                     </linearGradient>
+                                    <linearGradient id="colorSessions" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.1} />
+                                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                                    </linearGradient>
                                 </defs>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
                                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#9ca3af', fontSize: 12 }} />
                                 <YAxis axisLine={false} tickLine={false} tick={{ fill: '#9ca3af', fontSize: 12 }} />
                                 <Tooltip />
-                                <Area type="monotone" dataKey="dau" stroke="#00A980" fillOpacity={1} fill="url(#colorDau)" strokeWidth={2} />
+                                <Area type="monotone" dataKey="dau" stroke="#00A980" fillOpacity={1} fill="url(#colorDau)" strokeWidth={2} name="DAU" />
+                                <Area type="monotone" dataKey="sessions" stroke="#3b82f6" fillOpacity={1} fill="url(#colorSessions)" strokeWidth={2} name="Sessions" />
                             </AreaChart>
                         </ResponsiveContainer>
                     </div>
                 </div>
 
-                {/* Stability & Session */}
+                {/* Stability & Retention */}
                 <div className="flex flex-col gap-6">
                     <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex-1">
-                        <h3 className="text-lg font-bold mb-4 text-gray-800">앱 안정성 및 세션</h3>
-                        <div className="flex justify-around py-4">
-                            <div className="text-center">
-                                <p className="text-sm text-gray-500 mb-1">Crash-free Users</p>
+                        <div className="flex justify-between items-start mb-4">
+                            <h3 className="text-lg font-bold text-gray-800">앱 안정성 및 체류</h3>
+                            <span className="text-xs font-medium px-2 py-1 bg-green-50 text-green-600 rounded">Crashlytics</span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4 py-2">
+                            <div className="bg-gray-50 p-4 rounded-lg">
+                                <p className="text-xs text-gray-500 mb-1">Crash-free Users</p>
                                 <p className="text-2xl font-bold text-[#00A980]">{data.metrics.crashFreeUsers}</p>
                             </div>
-                            <div className="text-center border-l border-gray-100 pl-8">
-                                <p className="text-sm text-gray-500 mb-1">평균 체류 시간</p>
+                            <div className="bg-gray-50 p-4 rounded-lg">
+                                <p className="text-xs text-gray-500 mb-1">평균 체류 시간</p>
                                 <p className="text-2xl font-bold text-gray-800">{data.metrics.avgSessionDuration}</p>
                             </div>
                         </div>
                     </div>
 
                     <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex-1">
-                        <h3 className="text-lg font-bold mb-4 text-gray-800">D1/D7/D30 리텐션</h3>
+                        <div className="flex justify-between items-start mb-4">
+                            <h3 className="text-lg font-bold text-gray-800">리텐션 (Retention Rate)</h3>
+                            <span className="text-xs font-medium px-2 py-1 bg-blue-50 text-blue-600 rounded">Firebase</span>
+                        </div>
                         <div className="space-y-4 pt-2">
-                            <div className="flex justify-between items-center text-sm">
-                                <span className="text-gray-600">Day 1 Retention</span>
-                                <span className="font-bold text-gray-900">42.5%</span>
+                            <div>
+                                <div className="flex justify-between items-center text-sm mb-1">
+                                    <span className="text-gray-600 font-medium">Day 1 (일일 리텐션)</span>
+                                    <span className="font-bold text-gray-900">{data.metrics.retention.d1}%</span>
+                                </div>
+                                <div className="w-full bg-gray-100 rounded-full h-1.5">
+                                    <div className="bg-[#00A980] h-1.5 rounded-full" style={{ width: `${data.metrics.retention.d1}%` }}></div>
+                                </div>
                             </div>
-                            <div className="w-full bg-gray-100 rounded-full h-2">
-                                <div className="bg-[#00A980] h-2 rounded-full" style={{ width: '42.5%' }}></div>
+                            <div>
+                                <div className="flex justify-between items-center text-sm mb-1">
+                                    <span className="text-gray-600 font-medium">Day 7 (주간 리텐션)</span>
+                                    <span className="font-bold text-gray-900">{data.metrics.retention.d7}%</span>
+                                </div>
+                                <div className="w-full bg-gray-100 rounded-full h-1.5">
+                                    <div className="bg-[#00A980] h-1.5 rounded-full" style={{ width: `${data.metrics.retention.d7}%` }}></div>
+                                </div>
                             </div>
-                            <div className="flex justify-between items-center text-sm">
-                                <span className="text-gray-600">Day 7 Retention</span>
-                                <span className="font-bold text-gray-900">18.2%</span>
-                            </div>
-                            <div className="w-full bg-gray-100 rounded-full h-2">
-                                <div className="bg-[#00A980] h-2 rounded-full" style={{ width: '18.2%' }}></div>
+                            <div>
+                                <div className="flex justify-between items-center text-sm mb-1">
+                                    <span className="text-gray-600 font-medium">Day 30 (월간 리텐션)</span>
+                                    <span className="font-bold text-gray-900">{data.metrics.retention.d30}%</span>
+                                </div>
+                                <div className="w-full bg-gray-100 rounded-full h-1.5">
+                                    <div className="bg-[#00A980] h-1.5 rounded-full" style={{ width: `${data.metrics.retention.d30}%` }}></div>
+                                </div>
                             </div>
                         </div>
                     </div>

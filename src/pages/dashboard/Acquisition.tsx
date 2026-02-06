@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { getAcquisitionData } from '@/api/analytics';
 import {
-    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend
+    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend, LabelList
 } from 'recharts';
 
 const COLORS = ['#00A980', '#00C49F', '#FFBB28', '#FF8042'];
@@ -61,7 +61,9 @@ export default function AcquisitionDashboard() {
                                 <XAxis type="number" hide />
                                 <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fill: '#4b5563', fontSize: 13 }} />
                                 <Tooltip cursor={{ fill: 'transparent' }} />
-                                <Bar dataKey="value" fill="#00A980" radius={[0, 4, 4, 0]} barSize={20} />
+                                <Bar dataKey="conversion" fill="#00A980" radius={[0, 4, 4, 0]} barSize={20}>
+                                    <LabelList dataKey="conversion" position="right" formatter={(v: any) => `${v}%`} fill="#4b5563" style={{ fontSize: '11px', fontWeight: 'bold' }} />
+                                </Bar>
                             </BarChart>
                         </ResponsiveContainer>
                     </div>
@@ -70,24 +72,35 @@ export default function AcquisitionDashboard() {
 
             {/* Unique Link Performance Table */}
             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                <h3 className="text-lg font-bold mb-6 text-gray-800">고유 링크 유입 성과 (작가 / 블로거)</h3>
+                <div className="flex justify-between items-center mb-6">
+                    <h3 className="text-lg font-bold text-gray-800">고유 링크 유입 성과 (작가 / 블로거)</h3>
+                    <span className="text-xs font-medium px-2 py-1 bg-green-50 text-[#00A980] rounded">Source Parameter Tracking</span>
+                </div>
                 <div className="overflow-x-auto">
                     <table className="w-full text-left">
                         <thead>
                             <tr className="border-b border-gray-100 text-sm text-gray-400 font-medium">
-                                <th className="pb-4 pl-2">출처(소스)</th>
-                                <th className="pb-4">유입 유저 수</th>
-                                <th className="pb-4">가입 전환</th>
-                                <th className="pb-4">성과 점수</th>
+                                <th className="pb-4 pl-2">출처 (Source)</th>
+                                <th className="pb-4">누적 유입 (Sessions)</th>
+                                <th className="pb-4">가입 전환율</th>
+                                <th className="pb-4">종합 성과</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-50">
                             {data.links.map((link: any) => (
                                 <tr key={link.name} className="hover:bg-gray-50 transition-colors">
                                     <td className="py-4 pl-2 font-medium text-gray-900">{link.name}</td>
-                                    <td className="py-4 text-gray-700">{link.users}명</td>
-                                    <td className="py-4 text-gray-700">{(link.users * 0.15).toFixed(0)}명 (15%)</td>
-                                    <td className="py-4 text-[#00A980] font-bold">Excellent</td>
+                                    <td className="py-4 text-gray-700 font-semibold">{link.users.toLocaleString()}</td>
+                                    <td className="py-4 text-gray-700">{link.conversionRate}%</td>
+                                    <td className="py-4">
+                                        <span className={`px-2 py-1 rounded-full text-[10px] font-bold ${link.status === 'Excellent' ? 'bg-green-100 text-green-700' :
+                                            link.status === 'Good' ? 'bg-blue-100 text-blue-700' :
+                                                link.status === 'Average' ? 'bg-yellow-100 text-yellow-700' :
+                                                    'bg-gray-100 text-gray-700'
+                                            }`}>
+                                            {link.status}
+                                        </span>
+                                    </td>
                                 </tr>
                             ))}
                         </tbody>
