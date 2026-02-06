@@ -19,8 +19,9 @@ const NAV_ITEMS = [
     {
         label: '촬영관리',
         subItems: [
-            { label: '촬영목록', path: '/shootings' },
-            { label: '촬영등록', path: '/shootings/new' },
+            { label: '일반 촬영 접수 내역', path: '/shootings' },
+            { label: '단체 행사 촬영 접수 내역', path: '/shootings/group' },
+            { label: '촬영 등록', path: '/shootings/register' },
         ]
     },
     {
@@ -32,25 +33,16 @@ const NAV_ITEMS = [
     {
         label: '게시판',
         subItems: [
-            { label: '공지사항', path: '/notice' },
+            { label: '공지사항', path: '/board/notice' },
+            { label: '자주 묻는 질문', path: '/board/faq' },
+            { label: '소식', path: '/board/news' },
         ]
     },
     {
         label: '고객관리',
         subItems: [
-            { label: '회원목록', path: '/users' },
-        ]
-    },
-    {
-        label: '예약 조회',
-        subItems: [
-            { label: '예약현황', path: '/reservations' },
-        ]
-    },
-    {
-        label: '혜택등록',
-        subItems: [
-            { label: '이벤트관리', path: '/events' },
+            { label: '촬영 고객 관리', path: '/customers/clients' },
+            { label: '사진 작가 관리', path: '/customers/photographers' },
         ]
     },
     {
@@ -60,27 +52,43 @@ const NAV_ITEMS = [
         ]
     },
     {
-        label: '광고관리',
+        label: '광고 및 프로모션 관리',
         subItems: [
-            { label: '광고현황', path: '/ad' },
-        ]
-    },
-    {
-        label: '프로모션관리',
-        subItems: [
-            { label: '프로모션', path: '/promotions' },
+            { label: '광고현황', path: '/marketing/ads' },
+            { label: '이벤트 관리', path: '/marketing/events' },
+            { label: '프로모션', path: '/marketing/promotions' },
         ]
     },
     {
         label: '데이터분석',
         subItems: [
-            { label: '분석대시보드', path: '/analytics' },
+            { label: '분석 대시보드', path: '/analytics/dashboard' },
+            { label: '데이터 다운로드', path: '/analytics/download' },
         ]
     },
     {
-        label: '신고관리',
+        label: '콘텐츠 관리',
         subItems: [
-            { label: '신고현황', path: '/reports' },
+            { label: '포트폴리오 검수', path: '/content/portfolio' },
+            { label: '커뮤니티 관리', path: '/content/community' },
+            { label: '카테고리, 태그 관리', path: '/content/tags' },
+        ]
+    },
+    {
+        label: '정산 매출 관리',
+        subItems: [
+            { label: '정산 대기 내역', path: '/settlement/pending' },
+            { label: '세금 계산서 및 영수증 발행', path: '/settlement/tax' },
+            { label: '수수료 설정', path: '/settlement/fees' },
+        ]
+    },
+    {
+        label: '고객 지원 관리',
+        subItems: [
+            { label: '신고 접수 내역', path: '/cs/reports' },
+            { label: '1:1 문의 내역', path: '/cs/inquiry' },
+            { label: 'FAQ 질문 관리', path: '/cs/faq' },
+            { label: '채팅 로그 모니터링', path: '/cs/chat-log' },
         ]
     },
 ];

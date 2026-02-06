@@ -64,19 +64,61 @@ function App() {
         <Route element={<ProtectedRoute />}>
           <Route path="/" element={<Navigate to="/dashboard/general" replace />} />
           <Route path="/dashboard" element={<Navigate to="/dashboard/general" replace />} />
+
+          {/* 대시보드 */}
           <Route path="/dashboard/general" element={<GeneralDashboard />} />
           <Route path="/dashboard/acquisition" element={<AcquisitionDashboard />} />
           <Route path="/dashboard/funnel" element={<FunnelDashboard />} />
           <Route path="/dashboard/creator" element={<CreatorDashboard />} />
-          <Route path="/reports" element={<ReportsPage />} />
+
+          {/* 촬영관리 */}
           <Route path="/shootings" element={<ShootingsPage />} />
+          <Route path="/shootings/group" element={<Placeholder title="단체 행사 촬영 접수 내역" />} />
+          <Route path="/shootings/register" element={<Placeholder title="촬영 등록" />} />
+
+          {/* 일정관리 */}
           <Route path="/schedule" element={<SchedulePage />} />
-          <Route path="/reservations" element={<ReservationsPage />} />
-          <Route path="/notice" element={<Placeholder title="공지사항 관리" />} />
-          <Route path="/faq" element={<Placeholder title="FAQ 관리" />} />
-          <Route path="/users" element={<Placeholder title="회원 관리" />} />
+
+          {/* 게시판 */}
+          <Route path="/board/notice" element={<Placeholder title="공지사항" />} />
+          <Route path="/board/faq" element={<Placeholder title="자주 묻는 질문" />} />
+          <Route path="/board/news" element={<Placeholder title="소식" />} />
+
+          {/* 고객관리 */}
+          <Route path="/customers/clients" element={<Placeholder title="촬영 고객 관리" />} />
+          <Route path="/customers/photographers" element={<Placeholder title="사진 작가 관리" />} />
+
+          {/* 채팅 */}
           <Route path="/chat" element={<ChatPage />} />
-          <Route path="/banners" element={<Placeholder title="프로모션 배너 관리" />} />
+
+          {/* 광고 및 프로모션 관리 */}
+          <Route path="/marketing/ads" element={<Placeholder title="광고현황" />} />
+          <Route path="/marketing/events" element={<Placeholder title="이벤트 관리" />} />
+          <Route path="/marketing/promotions" element={<Placeholder title="프로모션" />} />
+
+          {/* 데이터분석 */}
+          <Route path="/analytics/dashboard" element={<Placeholder title="분석 대시보드" />} />
+          <Route path="/analytics/download" element={<Placeholder title="데이터 다운로드" />} />
+
+          {/* 콘텐츠 관리 */}
+          <Route path="/content/portfolio" element={<Placeholder title="포트폴리오 검수" />} />
+          <Route path="/content/community" element={<Placeholder title="커뮤니티 관리" />} />
+          <Route path="/content/tags" element={<Placeholder title="카테고리, 태그 관리" />} />
+
+          {/* 정산 매출 관리 */}
+          <Route path="/settlement/pending" element={<Placeholder title="정산 대기 내역" />} />
+          <Route path="/settlement/tax" element={<Placeholder title="세금 계산서 및 영수증 발행" />} />
+          <Route path="/settlement/fees" element={<Placeholder title="수수료 설정" />} />
+
+          {/* 고객 지원 관리 */}
+          <Route path="/cs/reports" element={<Placeholder title="신고 접수 내역" />} />
+          <Route path="/cs/inquiry" element={<Placeholder title="1:1 문의 내역" />} />
+          <Route path="/cs/faq" element={<Placeholder title="FAQ 질문 관리" />} />
+          <Route path="/cs/chat-log" element={<Placeholder title="채팅 로그 모니터링" />} />
+
+          {/* 구버전 경로 호환성 유지 또는 리다이렉트 (필요 시) */}
+          <Route path="/reports" element={<ReportsPage />} />
+          <Route path="/reservations" element={<ReservationsPage />} />
         </Route>
       </Routes>
     </BrowserRouter>
