@@ -47,7 +47,7 @@ export default function FunnelDashboard() {
                             <YAxis hide />
                             <Tooltip cursor={{ fill: '#f9fafb' }} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} />
                             <Bar dataKey="count" radius={[10, 10, 0, 0]} barSize={100}>
-                                {data.bookingFunnel.map((entry: any, index: number) => (
+                                {data.bookingFunnel.map((_: any, index: number) => (
                                     <Cell key={`cell-${index}`} fill={funnelColors[index % funnelColors.length]} />
                                 ))}
                                 <LabelList
