@@ -229,7 +229,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
                 const createFunnel = (stages: any[], baseKey: string) => {
                     const baseCount = eventData[baseKey] || 0;
-                    return stages.map((s, i) => {
+                    return stages.map((s, _) => {
                         const count = eventData[s.key] || 0;
                         return {
                             stage: s.stage,
