@@ -2,11 +2,20 @@ import React, { useEffect, useState } from 'react';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { getFunnelData } from '@/api/analytics';
 import {
-    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList, Cell
+    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList
 } from 'recharts';
 
 export default function FunnelDashboard() {
     const [data, setData] = useState<any>(null);
+
+    useEffect(() => {
+        getFunnelData('7d').then(setData);
+    }, []);
+
+    if (!data) return <div className="p-8">Loading...</div>;
+
+    const funnelColors = ['#00A980', '#00C495', '#33D4AA', '#66E4BF', '#99F4DF'];
+    const blueColors = ['#3b82f6', '#60a5fa', '#93c5fd', '#bfdbfe'];
 
     const TraditionalFunnel = ({ items, colorBase }: { items: any[], colorBase: string[] }) => {
         if (!items || items.length === 0) return null;
@@ -146,8 +155,7 @@ export default function FunnelDashboard() {
 
                         <div className="grid grid-cols-2 gap-8">
                             {data.bookingFunnel?.final?.map((f: any) => (
-                                <div key={f.stage} className={`flex flex-col items-center p-6 rounded-2xl border-2 transition-transform hover:scale-105 ${f.isPositive ? 'bg-green-50 border-green-100' : 'bg-red-50 border-red-100'
-                                    }`}>
+                                <div key={f.stage} className={`flex flex-col items-center p-6 rounded-2xl border-2 transition-transform hover:scale-105 ${f.isPositive ? 'bg-green-50 border-green-100' : 'bg-red-50 border-red-100'}`}>
                                     <span className={`text-[10px] font-black uppercase mb-2 tracking-widest ${f.isPositive ? 'text-green-600' : 'text-red-600'}`}>
                                         {f.stage}
                                     </span>
@@ -163,8 +171,5 @@ export default function FunnelDashboard() {
                 </div>
             </div>
         </div>
-    );
-}
-        </div >
     );
 }
