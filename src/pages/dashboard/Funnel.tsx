@@ -46,7 +46,7 @@ export default function FunnelDashboard() {
                                     <XAxis dataKey="stage" axisLine={false} tickLine={false} tick={{ fill: '#4b5563', fontSize: 11, fontWeight: 'bold' }} />
                                     <YAxis hide />
                                     <Tooltip />
-                                    <Bar dataKey="count" radius={[10, 10, 0, 0]} barSize={60}>
+                                    <Bar dataKey="count" radius={[10, 10, 0, 0]} barSize={60} minPointSize={2}>
                                         {(data.discoveryFunnel || []).map((_: any, index: number) => (
                                             <Cell key={`cell-${index}`} fill={funnelColors[index % funnelColors.length]} />
                                         ))}
@@ -71,7 +71,7 @@ export default function FunnelDashboard() {
                                     <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#4b5563', fontSize: 11, fontWeight: 'bold' }} />
                                     <YAxis axisLine={false} tickLine={false} tick={{ fill: '#9ca3af', fontSize: 12 }} />
                                     <Tooltip cursor={{ fill: '#f9fafb' }} />
-                                    <Bar dataKey="count" fill="#3b82f6" radius={[4, 4, 0, 0]} barSize={40}>
+                                    <Bar dataKey="count" fill="#3b82f6" radius={[4, 4, 0, 0]} barSize={40} minPointSize={2}>
                                         <LabelList dataKey="count" position="top" style={{ fontWeight: '700', fontSize: '12px' }} />
                                     </Bar>
                                 </BarChart>
@@ -109,7 +109,7 @@ export default function FunnelDashboard() {
                                 <XAxis dataKey="stage" axisLine={false} tickLine={false} tick={{ fill: '#4b5563', fontSize: 13, fontWeight: 'bold' }} />
                                 <YAxis hide />
                                 <Tooltip cursor={{ fill: '#f9fafb' }} />
-                                <Bar dataKey="count" radius={[10, 10, 0, 0]} barSize={100}>
+                                <Bar dataKey="count" radius={[10, 10, 0, 0]} barSize={100} minPointSize={2}>
                                     {(data.inquiryFunnel || []).map((_: any, index: number) => (
                                         <Cell key={`cell-${index}`} fill={blueColors[index % blueColors.length]} />
                                     ))}

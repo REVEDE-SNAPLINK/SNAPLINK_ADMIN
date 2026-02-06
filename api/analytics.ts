@@ -211,12 +211,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     dimensionFilter: {
                         orGroup: {
                             expressions: [
-                                // 탐색/커뮤니티 관련 이벤트
-                                { filter: { fieldName: 'eventName', inListFilter: { values: ['feed_view', 'post_view', 'creator_card_exposed', 'creator_profile_click', 'inquiry_intent'] } } },
-                                // 커뮤니티 상호작용 관련 이벤트
-                                { filter: { fieldName: 'eventName', inListFilter: { values: ['post_creation', 'post_like', 'post_comment', 'post_share', 'creator_tagged'] } } },
+                                // 탐색/커뮤니티 관련 이벤트 (Master Spec 반영)
+                                { filter: { fieldName: 'eventName', inListFilter: { values: ['community_post_view', 'photographer_profile_view', 'booking_intent', 'booking_request_submitted', 'booking_confirmed'] } } },
+                                // 상호작용 관련 이벤트
+                                { filter: { fieldName: 'eventName', inListFilter: { values: ['community_post_like', 'community_comment_create', 'chat_initiated'] } } },
                                 // 문의 관련 이벤트
-                                { filter: { fieldName: 'eventName', inListFilter: { values: ['inquiry_started', 'first_message_sent', 'photographer_responded', 'thread_active'] } } }
+                                { filter: { fieldName: 'eventName', inListFilter: { values: ['chat_message_sent', 'photographer_response'] } } }
                             ]
                         }
                     }
@@ -236,29 +236,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 finalResult = {
                     // (A) 작가/콘텐츠 탐색 퍼널
                     discoveryFunnel: createFunnel([
-                        { stage: 'Feed View', key: 'feed_view' },
-                        { stage: 'Post View', key: 'post_view' },
-                        { stage: 'Card Exposed', key: 'creator_card_exposed' },
-                        { stage: 'Profile Click', key: 'creator_profile_click' },
-                        { stage: 'Inquiry Intent', key: 'inquiry_intent' }
-                    ], 'feed_view'),
+                        { stage: 'Content View', key: 'community_post_view' },
+                        { stage: 'Profile View', key: 'photographer_profile_view' },
+                        { stage: 'Booking Intent', key: 'booking_intent' },
+                        { stage: 'Request Submit', key: 'booking_request_submitted' },
+                        { stage: 'Booking Confirm', key: 'booking_confirmed' }
+                    ], 'community_post_view'),
 
                     // (B) 커뮤니티 상호작용 (Vertical Bar Chart용)
                     communityInteractions: [
-                        { name: 'Post Creation', count: eventData['post_creation'] || 0 },
-                        { name: 'Likes', count: eventData['post_like'] || 0 },
-                        { name: 'Comments', count: eventData['post_comment'] || 0 },
-                        { name: 'Shares', count: eventData['post_share'] || 0 },
-                        { name: 'Tagged', count: eventData['creator_tagged'] || 0 }
+                        { name: 'Post View', count: eventData['community_post_view'] || 0 },
+                        { name: 'Likes', count: eventData['community_post_like'] || 0 },
+                        { name: 'Comments', count: eventData['community_comment_create'] || 0 },
+                        { name: 'Chat Start', count: eventData['chat_initiated'] || 0 }
                     ],
 
                     // 4) 문의 퍼널
                     inquiryFunnel: createFunnel([
-                        { stage: 'Inquiry Started', key: 'inquiry_started' },
-                        { stage: '1st Msg Sent', key: 'first_message_sent' },
-                        { stage: 'Artist Responded', key: 'photographer_responded' },
-                        { stage: 'Thread Active', key: 'thread_active' }
-                    ], 'inquiry_started')
+                        { stage: 'Chat Initiated', key: 'chat_initiated' },
+                        { stage: 'Msg Sent', key: 'chat_message_sent' },
+                        { stage: 'Artist Response', key: 'photographer_response' },
+                        { stage: 'Booking Confirm', key: 'booking_confirmed' }
+                    ], 'chat_initiated')
                 };
                 break;
             }
