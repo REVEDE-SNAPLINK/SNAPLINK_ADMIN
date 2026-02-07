@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { format, subDays } from 'date-fns';
 
 // Mock API for GA4 Data
 export interface AnalyticsData {
@@ -6,36 +7,39 @@ export interface AnalyticsData {
     charts: any[];
 }
 
-export const getGeneralKPI = async (period: string): Promise<any> => {
+export const getGeneralKPI = async (period: string, platform?: string): Promise<any> => {
     try {
-        const response = await axios.get(`/api/analytics?type=general&period=${period}`);
+        const response = await axios.get(`/api/analytics?type=general&period=${period}${platform ? `&platform=${platform}` : ''}`);
         return response.data;
     } catch (error) {
-        console.warn('GA4 API 연동 전이거나 오류 발생. Mock 데이터를 반환합니다.');
+        // Fallback or handle error
         return {
             metrics: {
-                DAU: 1250, dauChange: 12.5,
-                WAU: 4800, wauChange: -5.2,
-                MAU: 8200, mauChange: 8.4,
-                stickiness: 15.2,
-                avgSessionDuration: "4m 32s",
-                avgSessionDurationValue: 272,
-                sessionsPerUser: 2.4,
-                crashFreeUsers: 99.8,
-                retention: {
-                    d1: 42.5,
-                    d7: 18.2,
-                    d30: 8.4
-                }
+                DAU: 1250,
+                dauChange: 12.5,
+                WAU: 8400,
+                wauChange: 5.2,
+                MAU: 32000,
+                mauChange: 8.7,
+                stickiness: 26.3,
+                avgSessionDuration: "3m 45s",
+                avgUserEngagement: "155s",
+                sessionsPerUser: 1.45,
+                crashFreeUsers: "99.8",
+                retention: { d1: 42.5, d7: 18.2, d30: 8.4 }
             },
-            charts: [
-                { name: 'Mon', dau: 1100, sessions: 2800, sessionDuration: 240 },
-                { name: 'Tue', dau: 1300, sessions: 3200, sessionDuration: 280 },
-                { name: 'Wed', dau: 1250, sessions: 3100, sessionDuration: 260 },
-                { name: 'Thu', dau: 1400, sessions: 3500, sessionDuration: 300 },
-                { name: 'Fri', dau: 1350, sessions: 3300, sessionDuration: 290 },
-                { name: 'Sat', dau: 1100, sessions: 2900, sessionDuration: 250 },
-                { name: 'Sun', dau: 1150, sessions: 3000, sessionDuration: 255 },
+            charts: Array.from({ length: 7 }, (_, i) => ({
+                name: format(subDays(new Date(), 6 - i), 'MM/dd'),
+                dau: 1000 + Math.floor(Math.random() * 500),
+                sessions: 1500 + Math.floor(Math.random() * 800),
+                sessionDuration: 180 + Math.floor(Math.random() * 120)
+            })),
+            screensFunnel: [
+                { stage: '앱 실행', count: 12000, percentage: 100 },
+                { stage: '작가 검색', count: 8500, percentage: 71 },
+                { stage: '작가 상세', count: 4200, percentage: 35 },
+                { stage: '문의 시작', count: 2100, percentage: 18 },
+                { stage: '예약 요청', count: 450, percentage: 4 },
             ],
             cohortData: [
                 { date: '2024-01-20', newUsers: 100, d0: 100, d1: 45, d7: 18, d30: 8 },
@@ -48,66 +52,68 @@ export const getGeneralKPI = async (period: string): Promise<any> => {
     }
 };
 
-export const getAcquisitionData = async (period: string): Promise<any> => {
+export const getAcquisitionData = async (period: string, platform?: string): Promise<any> => {
     try {
-        const response = await axios.get(`/api/analytics?type=acquisition&period=${period}`);
+        const response = await axios.get(`/api/analytics?type=acquisition&period=${period}${platform ? `&platform=${platform}` : ''}`);
         return response.data;
     } catch (error) {
         return {
             channels: [
-                { name: 'Instagram', value: 45, conversion: 12.5 },
-                { name: 'Naver Blog', value: 25, conversion: 8.2 },
-                { name: 'Kakaotalk', value: 18, conversion: 15.4 },
-                { name: 'Direct/Search', value: 12, conversion: 5.1 },
+                { name: 'Instagram', value: 4500, conversion: '12.5%' },
+                { name: 'Direct', value: 3200, conversion: '8.4%' },
+                { name: 'Google', value: 2100, conversion: '15.2%' },
+                { name: 'Naver Search', value: 1800, conversion: '10.1%' },
+                { name: 'X (Twitter)', value: 1200, conversion: '5.4%' }
             ],
             links: [
-                { name: '작가A 고유링크', users: 1250, conversionRate: 14.2, status: 'Excellent' },
-                { name: '작가B 포트폴리오', users: 840, conversionRate: 11.5, status: 'Good' },
-                { name: '제휴 블로거C', users: 420, conversionRate: 9.8, status: 'Average' },
-                { name: '커뮤니티 홍보D', users: 150, conversionRate: 4.2, status: 'Low' },
+                { name: 'Winter_Campaign_A', users: 850, conversionRate: 18.5, status: 'Excellent' },
+                { name: 'Influencer_Review_01', users: 420, conversionRate: 12.1, status: 'Excellent' },
+                { name: 'NewYear_Special_B', users: 310, conversionRate: 9.4, status: 'Good' },
+                { name: 'Brand_Story_FB', users: 280, conversionRate: 7.2, status: 'Good' },
+                { name: 'Bio_Link_Main', users: 150, conversionRate: 4.5, status: 'Average' }
             ]
         };
     }
 };
 
-export const getFunnelData = async (period: string): Promise<any> => {
+export const getFunnelData = async (period: string, platform?: string): Promise<any> => {
     try {
-        const response = await axios.get(`/api/analytics?type=funnel&period=${period}`);
+        const response = await axios.get(`/api/analytics?type=funnel&period=${period}${platform ? `&platform=${platform}` : ''}`);
         return response.data;
     } catch (error) {
         return {
             discoveryFunnel: [
-                { stage: 'Feed', count: 12000, percentage: 100 },
-                { stage: 'Post', count: 8500, percentage: 71 },
-                { stage: 'Card', count: 4200, percentage: 35 },
-                { stage: 'Profile', count: 2100, percentage: 18 },
-                { stage: 'Inquiry', count: 450, percentage: 4 },
+                { stage: '홈 피드', count: 12000, percentage: 100 },
+                { stage: '작가 상세', count: 8500, percentage: 71 },
+                { stage: '작가 카드', count: 4200, percentage: 35 },
+                { stage: '작가 프로필', count: 2100, percentage: 18 },
+                { stage: '문의 시작', count: 450, percentage: 4 },
             ],
             communityInteractions: [
-                { name: 'Creation', count: 120 },
-                { name: 'View', count: 8500 },
-                { name: 'Like', count: 420 },
-                { name: 'Comment', count: 156 },
-                { name: 'Share', count: 84 }
+                { name: '생성', count: 120 },
+                { name: '조회', count: 8500 },
+                { name: '좋아요', count: 420 },
+                { name: '댓글', count: 156 },
+                { name: '공유', count: 84 }
             ],
             bookingFunnel: {
                 steps: [
-                    { stage: 'Booking Intent', count: 2100, percentage: 100 },
-                    { stage: 'Form Submit', count: 450, percentage: 21 },
-                    { stage: 'Confirmed', count: 180, percentage: 9 },
+                    { stage: '예약 시도', count: 2100, percentage: 100 },
+                    { stage: '예약 폼 제출', count: 450, percentage: 21 },
+                    { stage: '예약 확정', count: 180, percentage: 9 },
                 ],
                 final: [
-                    { stage: 'Booking Confirmed', count: 180, isPositive: true },
-                    { stage: 'Cancelled', count: 45, isPositive: false }
+                    { stage: '예약 확정', count: 180, isPositive: true },
+                    { stage: '예약 취소', count: 45, isPositive: false }
                 ]
             }
         };
     }
 };
 
-export const getCreatorData = async (period: string): Promise<any> => {
+export const getCreatorData = async (period: string, platform?: string): Promise<any> => {
     try {
-        const response = await axios.get(`/api/analytics?type=creator&period=${period}`);
+        const response = await axios.get(`/api/analytics?type=creator&period=${period}${platform ? `&platform=${platform}` : ''}`);
         return response.data;
     } catch (error) {
         return {

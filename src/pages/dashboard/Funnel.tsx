@@ -7,10 +7,15 @@ import {
 
 export default function FunnelDashboard() {
     const [data, setData] = useState<any>(null);
+    const [filters, setFilters] = useState({ period: '7d', platform: 'all' });
 
     useEffect(() => {
-        getFunnelData('7d').then(setData);
-    }, []);
+        getFunnelData(filters.period, filters.platform).then(setData);
+    }, [filters]);
+
+    const handleFilterChange = (newFilter: any) => {
+        setFilters(prev => ({ ...prev, ...newFilter }));
+    };
 
     if (!data) return <div className="p-8">Loading...</div>;
 
@@ -70,15 +75,15 @@ export default function FunnelDashboard() {
     return (
         <div className="p-8 pb-32">
             <DashboardHeader
-                title="탐색/커뮤니티 및 문의 분석"
-                onFilterChange={(f) => console.log('Filter:', f)}
+                title="탐색/커뮤니티 및 예약 분석"
+                onFilterChange={handleFilterChange}
             />
 
             {/* Section 3: Discovery & Community */}
             <div className="mb-12">
                 <h2 className="text-2xl font-black text-gray-900 mb-8 flex items-center gap-2">
                     <span className="w-10 h-10 bg-black text-white rounded-xl flex items-center justify-center text-lg shadow-lg">3</span>
-                    탐색/커뮤니티 지표
+                    탐색 및 커뮤니티 지표
                 </h2>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
@@ -87,10 +92,10 @@ export default function FunnelDashboard() {
                         <div className="mb-10 flex justify-between items-start">
                             <div>
                                 <h3 className="text-2xl font-black text-gray-900 tracking-tight leading-none mb-2">(A) 작가/콘텐츠 탐색 퍼널</h3>
-                                <p className="text-sm font-bold text-gray-400">Feed → Post → Card → Profile → Inquiry</p>
+                                <p className="text-sm font-bold text-gray-400">홈 피드 → 작가 상세 → 작가 카드 → 작가 프로필 → 문의 시작</p>
                             </div>
                             <div className="bg-green-50 px-4 py-2 rounded-xl text-right">
-                                <span className="text-[10px] font-black text-green-600 block mb-0.5 uppercase tracking-widest">Inquiry CVR</span>
+                                <span className="text-[10px] font-black text-green-600 block mb-0.5 uppercase tracking-widest">문의 전환율 (CVR)</span>
                                 <span className="text-3xl font-black text-green-600">
                                     {data.discoveryFunnel?.[data.discoveryFunnel.length - 1]?.percentage ?? 0}%
                                 </span>
@@ -104,7 +109,7 @@ export default function FunnelDashboard() {
                     <div className="bg-white p-10 rounded-2xl shadow-sm border border-gray-100">
                         <div className="mb-10">
                             <h3 className="text-2xl font-black text-gray-900 tracking-tight leading-none mb-2">(B) 커뮤니티 상호작용</h3>
-                            <p className="text-sm font-bold text-gray-400">콘텐츠 생산, 조회, 좋아요, 댓글, 공유 활성도</p>
+                            <p className="text-sm font-bold text-gray-400">콘텐츠 생성, 조회, 좋아요, 댓글, 공유 활성도</p>
                         </div>
 
                         <div className="h-[400px]">
@@ -132,17 +137,17 @@ export default function FunnelDashboard() {
                 </div>
             </div>
 
-            {/* Section 5: Booking Funnel */}
+            {/* Section 4: Booking Funnel */}
             <div>
                 <h2 className="text-2xl font-black text-gray-900 mb-8 flex items-center gap-2">
-                    <span className="w-10 h-10 bg-black text-white rounded-xl flex items-center justify-center text-lg shadow-lg">5</span>
+                    <span className="w-10 h-10 bg-black text-white rounded-xl flex items-center justify-center text-lg shadow-lg">4</span>
                     예약 지표 (단계별 도달 수)
                 </h2>
 
                 <div className="bg-white p-10 rounded-2xl shadow-sm border border-gray-100">
                     <div className="mb-10">
                         <h3 className="text-2xl font-black text-gray-900 tracking-tight leading-none mb-2">예약 퍼널 및 성사 지표</h3>
-                        <p className="text-sm font-bold text-gray-400">Booking Intent → Request Submit → Confirmed / Cancelled</p>
+                        <p className="text-sm font-bold text-gray-400">예약 시도 → 예약 폼 제출 → 예약 확정 / 취소</p>
                     </div>
 
                     <div className="max-w-4xl mx-auto">
@@ -162,7 +167,7 @@ export default function FunnelDashboard() {
                                     <span className="text-4xl font-black text-gray-900 mb-2">{f.count.toLocaleString()}</span>
                                     <div className="flex items-center gap-1">
                                         <div className={`w-3 h-3 rounded-full ${f.isPositive ? 'bg-green-500' : 'bg-red-500'}`} />
-                                        <span className="text-xs font-bold text-gray-400">최종 도달</span>
+                                        <span className="text-xs font-bold text-gray-400">최종 결과</span>
                                     </div>
                                 </div>
                             ))}

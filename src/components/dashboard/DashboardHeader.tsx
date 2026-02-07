@@ -37,7 +37,6 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ title, onFilte
                     onChange={(e) => onFilterChange({ platform: e.target.value })}
                 >
                     <option value="all">모든 플랫폼</option>
-                    <option value="web">Web</option>
                     <option value="ios">iOS</option>
                     <option value="android">Android</option>
                 </select>

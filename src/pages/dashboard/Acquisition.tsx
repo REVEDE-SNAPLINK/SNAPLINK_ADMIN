@@ -9,18 +9,23 @@ const COLORS = ['#00A980', '#00C49F', '#FFBB28', '#FF8042'];
 
 export default function AcquisitionDashboard() {
     const [data, setData] = useState<any>(null);
+    const [filters, setFilters] = useState({ period: '7d', platform: 'all' });
 
     useEffect(() => {
-        getAcquisitionData('7d').then(setData);
-    }, []);
+        getAcquisitionData(filters.period, filters.platform).then(setData);
+    }, [filters]);
+
+    const handleFilterChange = (newFilter: any) => {
+        setFilters(prev => ({ ...prev, ...newFilter }));
+    };
 
     if (!data) return <div className="p-8">Loading...</div>;
 
     return (
         <div className="p-8 pb-16">
             <DashboardHeader
-                title="유입 및 획득 (Acquisition)"
-                onFilterChange={(f) => console.log('Filter:', f)}
+                title="유입 및 획득 분석"
+                onFilterChange={handleFilterChange}
             />
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">

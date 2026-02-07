@@ -63,7 +63,7 @@ async function fetchCrashFreeRate(): Promise<string> {
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method !== 'GET') return res.status(405).json({ error: 'Method Not Allowed' });
 
-    const { type, period } = req.query;
+    const { type, period, platform } = req.query;
 
     if (!propertyId || !credentials.client_email || !credentials.private_key) {
         return res.status(500).json({ error: 'GA4 환경 변수 누락' });
@@ -71,6 +71,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     try {
         let finalResult: any = {};
+
+        // 공통 디멘션 필터 (플랫폼 선택 시)
+        const platformFilter = platform && platform !== 'all' ? {
+            filter: {
+                fieldName: 'platform',
+                stringFilter: { value: platform as string }
+            }
+        } : null;
 
         switch (type) {
             case 'general': {
@@ -90,6 +98,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                         { name: 'userEngagementDuration' }
                     ],
                     dimensions: [{ name: 'date' }],
+                    dimensionFilter: platformFilter ? { andGroup: { expressions: [platformFilter] } } : undefined
                 });
 
                 const rows = response.rows || [];
@@ -129,7 +138,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
                 // 기타 지표
                 const latestRow = rows[rows.length - 1];
-                const totalSessionsWeek = parseInt(response.totals?.find(t => t.dimensionValues?.[0].value === 'current_week')?.metricValues?.[1].value || '0');
+                const totalSessionsCurrentRange = parseInt(response.totals?.find(t => t.dimensionValues?.[0].value === (period === '30d' ? 'current_month' : 'current_week'))?.metricValues?.[1].value || '0');
                 const avgSessionSec = parseFloat(latestRow?.metricValues?.[2].value || '0');
                 const totalEngagementSec = parseFloat(latestRow?.metricValues?.[3].value || '0');
                 const activeUsers = parseInt(latestRow?.metricValues?.[0].value || '1');
@@ -139,17 +148,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 // 탐색 깊이 퍼널 (Screens per session 용)
                 const [funnelResponse] = await analyticsClient.runReport({
                     property: `properties/${propertyId}`,
-                    dateRanges: [{ startDate: '30daysAgo', endDate: 'today' }],
+                    dateRanges: [{ startDate: period === '30d' ? '30daysAgo' : '7daysAgo', endDate: 'today' }],
                     dimensions: [{ name: 'eventName' }],
                     metrics: [{ name: 'totalUsers' }],
                     dimensionFilter: {
-                        orGroup: {
+                        andGroup: {
                             expressions: [
-                                { filter: { fieldName: 'eventName', stringFilter: { value: 'app_open' } } },
-                                { filter: { fieldName: 'eventName', stringFilter: { value: 'search_photographer' } } },
-                                { filter: { fieldName: 'eventName', stringFilter: { value: 'photographer_profile_view' } } },
-                                { filter: { fieldName: 'eventName', stringFilter: { value: 'chat_initiated' } } },
-                                { filter: { fieldName: 'eventName', stringFilter: { value: 'booking_request_submitted' } } }
+                                ...(platformFilter ? [platformFilter] : []),
+                                {
+                                    orGroup: {
+                                        expressions: [
+                                            { filter: { fieldName: 'eventName', stringFilter: { value: 'app_open' } } },
+                                            { filter: { fieldName: 'eventName', stringFilter: { value: 'search_photographer' } } },
+                                            { filter: { fieldName: 'eventName', stringFilter: { value: 'photographer_profile_view' } } },
+                                            { filter: { fieldName: 'eventName', stringFilter: { value: 'chat_initiated' } } },
+                                            { filter: { fieldName: 'eventName', stringFilter: { value: 'booking_request_submitted' } } }
+                                        ]
+                                    }
+                                }
                             ]
                         }
                     }
@@ -161,13 +177,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 }, {});
 
                 const baseF = fData['app_open'] || 1;
+                // 하향식 수치 보정 (Source Chain 시뮬레이션: 위 단계보다 아래 단계가 클 수 없음)
+                let prevVal = baseF;
                 const screensFunnel = [
-                    { stage: 'App Open', count: fData['app_open'] || 0, percentage: 100 },
-                    { stage: 'Search', count: fData['search_photographer'] || 0, percentage: Math.round(((fData['search_photographer'] || 0) / baseF) * 100) },
-                    { stage: 'Profile', count: fData['photographer_profile_view'] || 0, percentage: Math.round(((fData['photographer_profile_view'] || 0) / baseF) * 100) },
-                    { stage: 'Inquiry', count: fData['chat_initiated'] || 0, percentage: Math.round(((fData['chat_initiated'] || 0) / baseF) * 100) },
-                    { stage: 'Booking', count: fData['booking_request_submitted'] || 0, percentage: Math.round(((fData['booking_request_submitted'] || 0) / baseF) * 100) },
-                ];
+                    { stage: '앱 실행', key: 'app_open' },
+                    { stage: '작가 검색', key: 'search_photographer' },
+                    { stage: '작가 상세', key: 'photographer_profile_view' },
+                    { stage: '문의 시작', key: 'chat_initiated' },
+                    { stage: '예약 요청', key: 'booking_request_submitted' },
+                ].map(s => {
+                    const currentRaw = fData[s.key] || 0;
+                    const corrected = Math.min(prevVal, currentRaw);
+                    prevVal = corrected;
+                    return {
+                        stage: s.stage,
+                        count: corrected,
+                        percentage: Math.round((corrected / baseF) * 100)
+                    };
+                });
 
                 finalResult = {
                     metrics: {
@@ -180,7 +207,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                         stickiness: parseFloat(((yesterdayDau / (mau || 1)) * 100).toFixed(1)),
                         avgSessionDuration: formatDuration(avgSessionSec),
                         avgUserEngagement: formatDuration(totalEngagementSec / activeUsers),
-                        sessionsPerUser: parseFloat((totalSessionsWeek / (wau || 1)).toFixed(2)),
+                        sessionsPerUser: parseFloat((totalSessionsCurrentRange / (period === '30d' ? mau : wau || 1)).toFixed(2)),
                         crashFreeUsers: crashFreeRate,
                         retention: { d1: 42.5, d7: 18.2, d30: 8.4 }
                     },
@@ -204,6 +231,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     dateRanges: [{ startDate: period === '30d' ? '30daysAgo' : '7daysAgo', endDate: 'today' }],
                     dimensions: [{ name: 'sessionSource' }, { name: 'sessionMedium' }, { name: 'sessionCampaign' }],
                     metrics: [{ name: 'activeUsers' }, { name: 'sessions' }, { name: 'conversions' }],
+                    dimensionFilter: platformFilter ? { andGroup: { expressions: [platformFilter] } } : undefined
                 });
 
                 const channels = (response.rows || []).map(row => {
@@ -251,18 +279,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             case 'funnel': {
                 const [response] = await analyticsClient.runReport({
                     property: `properties/${propertyId}`,
-                    dateRanges: [{ startDate: '30daysAgo', endDate: 'today' }],
+                    dateRanges: [{ startDate: period === '30d' ? '30daysAgo' : '7daysAgo', endDate: 'today' }],
                     dimensions: [{ name: 'eventName' }],
                     metrics: [{ name: 'totalUsers' }],
                     dimensionFilter: {
-                        orGroup: {
+                        andGroup: {
                             expressions: [
-                                // 탐색/커뮤니티 관련 이벤트 (Master Spec V2.3 반영)
-                                { filter: { fieldName: 'eventName', inListFilter: { values: ['home_feed_view', 'portfolio_post_view', 'creator_card_view', 'photographer_profile_view', 'chat_initiated'] } } },
-                                // 커뮤니티 상호작용
-                                { filter: { fieldName: 'eventName', inListFilter: { values: ['community_post_create', 'community_post_view', 'community_post_like', 'community_comment_create', 'community_post_share'] } } },
-                                // 문의 및 예약
-                                { filter: { fieldName: 'eventName', inListFilter: { values: ['chat_message_sent', 'photographer_response', 'booking_intent', 'booking_request_submitted', 'booking_confirmed', 'booking_cancelled'] } } }
+                                ...(platformFilter ? [platformFilter] : []),
+                                {
+                                    orGroup: {
+                                        expressions: [
+                                            // 탐색/커뮤니티 관련 이벤트 (Master Spec V2.3 반영)
+                                            { filter: { fieldName: 'eventName', inListFilter: { values: ['home_feed_view', 'portfolio_post_view', 'creator_card_view', 'photographer_profile_view', 'chat_initiated'] } } },
+                                            // 커뮤니티 상호작용
+                                            { filter: { fieldName: 'eventName', inListFilter: { values: ['community_post_create', 'community_post_view', 'community_post_like', 'community_comment_create', 'community_post_share'] } } },
+                                            // 문의 및 예약
+                                            { filter: { fieldName: 'eventName', inListFilter: { values: ['chat_message_sent', 'photographer_response', 'booking_intent', 'booking_request_submitted', 'booking_confirmed', 'booking_cancelled'] } } }
+                                        ]
+                                    }
+                                }
                             ]
                         }
                     }
@@ -275,45 +310,48 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
                 const createFunnel = (stages: any[], baseKey: string) => {
                     const baseCount = eventData[baseKey] || 0;
+                    let lastValue = baseCount;
                     return stages.map((s) => {
                         const count = eventData[s.key] || 0;
+                        const correctedCount = Math.min(lastValue, count); // 내림차순 보정
+                        lastValue = correctedCount;
                         return {
                             stage: s.stage,
-                            count: count,
-                            percentage: baseCount > 0 ? Math.round((count / baseCount) * 100) : 0
+                            count: correctedCount,
+                            percentage: baseCount > 0 ? Math.round((correctedCount / baseCount) * 100) : 0
                         };
                     });
                 };
 
                 finalResult = {
-                    // (A) 작가/콘텐츠 탐색 퍼널 (V2.3: Feed -> Post -> Card -> Profile -> Inquiry)
+                    // (A) 작가/콘텐츠 탐색 퍼널 (V2.3 한글화)
                     discoveryFunnel: createFunnel([
-                        { stage: 'Feed', key: 'home_feed_view' },
-                        { stage: 'Post', key: 'portfolio_post_view' },
-                        { stage: 'Card', key: 'creator_card_view' },
-                        { stage: 'Profile', key: 'photographer_profile_view' },
-                        { stage: 'Inquiry', key: 'chat_initiated' }
+                        { stage: '홈 피드', key: 'home_feed_view' },
+                        { stage: '작가 상세', key: 'portfolio_post_view' },
+                        { stage: '작가 카드', key: 'creator_card_view' },
+                        { stage: '작가 프로필', key: 'photographer_profile_view' },
+                        { stage: '문의 시작', key: 'chat_initiated' }
                     ], 'home_feed_view'),
 
-                    // (B) 커뮤니티 상호작용 (Engagement)
+                    // (B) 커뮤니티 상호작용
                     communityInteractions: [
-                        { name: 'Creation', count: eventData['community_post_create'] || 0 },
-                        { name: 'View', count: eventData['community_post_view'] || 0 },
-                        { name: 'Like', count: eventData['community_post_like'] || 0 },
-                        { name: 'Comment', count: eventData['community_comment_create'] || 0 },
-                        { name: 'Share', count: eventData['community_post_share'] || 0 }
+                        { name: '생성', count: eventData['community_post_create'] || 0 },
+                        { name: '조회', count: eventData['community_post_view'] || 0 },
+                        { name: '좋아요', count: eventData['community_post_like'] || 0 },
+                        { name: '댓글', count: eventData['community_comment_create'] || 0 },
+                        { name: '공유', count: eventData['community_post_share'] || 0 }
                     ],
 
-                    // 4) 문의 및 예약 퍼널 (Booking Pipeline)
+                    // 4) 문의 및 예약 퍼널
                     bookingFunnel: {
                         steps: createFunnel([
-                            { stage: 'Booking Intent', key: 'booking_intent' },
-                            { stage: 'Form Submit', key: 'booking_request_submitted' },
-                            { stage: 'Confirmed', key: 'booking_confirmed' }
+                            { stage: '예약 시도', key: 'booking_intent' },
+                            { stage: '예약 폼 제출', key: 'booking_request_submitted' },
+                            { stage: '예약 확정', key: 'booking_confirmed' }
                         ], 'booking_intent'),
                         final: [
-                            { stage: 'Booking Confirmed', count: eventData['booking_confirmed'] || 0, isPositive: true },
-                            { stage: 'Cancelled', count: eventData['booking_cancelled'] || 0, isPositive: false }
+                            { stage: '예약 확정', count: eventData['booking_confirmed'] || 0, isPositive: true },
+                            { stage: '예약 취소', count: eventData['booking_cancelled'] || 0, isPositive: false }
                         ]
                     }
                 };
@@ -326,6 +364,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     property: `properties/${propertyId}`,
                     dateRanges: [{ startDate: period === '30d' ? '30daysAgo' : '7daysAgo', endDate: 'today' }],
                     metrics: [{ name: 'activeUsers' }],
+                    dimensionFilter: platformFilter ? { andGroup: { expressions: [platformFilter] } } : undefined
                     // 필요 시 Photographer 전용 필터 적용
                     // dimensionFilter: { filter: { fieldName: 'customEvent:user_type', stringFilter: { value: 'photographer' } } }
                 });

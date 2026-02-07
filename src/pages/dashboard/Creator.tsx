@@ -8,18 +8,23 @@ import {
 
 export default function CreatorDashboard() {
     const [data, setData] = useState<any>(null);
+    const [filters, setFilters] = useState({ period: '7d', platform: 'all' });
 
     useEffect(() => {
-        getCreatorData('7d').then(setData);
-    }, []);
+        getCreatorData(filters.period, filters.platform).then(setData);
+    }, [filters]);
+
+    const handleFilterChange = (newFilter: any) => {
+        setFilters(prev => ({ ...prev, ...newFilter }));
+    };
 
     if (!data) return <div className="p-8">Loading...</div>;
 
     return (
-        <div className="p-8 pb-16">
+        <div className="p-8 pb-32">
             <DashboardHeader
-                title="작가 성과 지표 (Creator Insights)"
-                onFilterChange={(f) => console.log('Filter:', f)}
+                title="공급자(작가) 퍼포먼스"
+                onFilterChange={handleFilterChange}
             />
 
             {/* Metric Cards */}
