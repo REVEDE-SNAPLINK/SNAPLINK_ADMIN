@@ -17,7 +17,8 @@ const credentials = {
 const analyticsClient = new BetaAnalyticsDataClient({ credentials });
 const bigquery = new BigQuery({
     projectId: bigQueryProjectId,
-    credentials
+    credentials,
+    location: 'asia-northeast3'
 });
 
 // 초 단위를 '0m 0s' 형식으로 변환 (단위 가공 반영)
@@ -337,7 +338,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 });
 
                 const eventData = (response.rows || []).reduce((acc: any, row) => {
-                    acc[row.dimensionValues?.[0].value || ''] = parseInt(row.metricValues?.[0].value || '0');
+                    const name = row.dimensionValues?.[0].value || '';
+                    const count = parseInt(row.metricValues?.[0].value || '0');
+                    console.log(`[Event Check] ${name}: ${count}`); // 실제 들어오는 이벤트명 확인용
+                    acc[name] = count;
                     return acc;
                 }, {});
 
