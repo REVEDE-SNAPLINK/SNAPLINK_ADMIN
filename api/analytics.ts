@@ -3,6 +3,10 @@ import { BigQuery } from '@google-cloud/bigquery';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { format, subDays } from 'date-fns';
 
+console.log("Checking Environment Variables...");
+console.log("Property ID exists:", !!process.env.GA4_PROPERTY_ID);
+console.log("Client Email exists:", !!process.env.GA4_CLIENT_EMAIL);
+console.log("Private Key length:", process.env.GA4_PRIVATE_KEY?.length || 0);
 const propertyId = process.env.GA4_PROPERTY_ID;
 const bigQueryProjectId = process.env.BIGQUERY_PROJECT_ID;
 const credentials = {
