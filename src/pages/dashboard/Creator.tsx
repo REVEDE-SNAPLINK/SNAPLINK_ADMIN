@@ -8,10 +8,10 @@ import {
 
 export default function CreatorDashboard() {
     const [data, setData] = useState<any>(null);
-    const [filters, setFilters] = useState({ period: '7d', platform: 'all' });
+    const [filters, setFilters] = useState({ period: '7d', platform: 'all', userType: 'all' });
 
     useEffect(() => {
-        getCreatorData(filters.period, filters.platform).then(setData);
+        getCreatorData(filters.period, filters.platform, filters.userType).then(setData);
     }, [filters]);
 
     const handleFilterChange = (newFilter: any) => {

@@ -27,8 +27,8 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ title, onFilte
                     onChange={(e) => onFilterChange({ userType: e.target.value })}
                 >
                     <option value="all">모든 사용자</option>
-                    <option value="customer">고객</option>
-                    <option value="creator">작가</option>
+                    <option value="client">고객</option>
+                    <option value="photographer">작가</option>
                 </select>
 
                 {/* Platform Filter */}

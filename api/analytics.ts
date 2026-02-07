@@ -63,7 +63,7 @@ async function fetchCrashFreeRate(): Promise<string> {
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method !== 'GET') return res.status(405).json({ error: 'Method Not Allowed' });
 
-    const { type, period, platform } = req.query;
+    const { type, period, platform, userType } = req.query;
 
     if (!propertyId || !credentials.client_email || !credentials.private_key) {
         return res.status(500).json({ error: 'GA4 환경 변수 누락' });
@@ -79,6 +79,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 stringFilter: { value: platform as string }
             }
         } : null;
+
+        // 사용자 유형 필터 (Master Spec V2.3: user_type 커스텀 디멘션 기준)
+        const userTypeFilter = userType && userType !== 'all' ? {
+            filter: {
+                fieldName: 'customEvent:user_type', // 명세서 기반 커스텀 디멘션
+                stringFilter: { value: userType as string }
+            }
+        } : null;
+
+        const combinedFilters = [
+            ...(platformFilter ? [platformFilter] : []),
+            ...(userTypeFilter ? [userTypeFilter] : [])
+        ];
+
+        const dimensionFilter = combinedFilters.length > 0
+            ? { andGroup: { expressions: combinedFilters } }
+            : undefined;
 
         switch (type) {
             case 'general': {
@@ -98,7 +115,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                         { name: 'userEngagementDuration' }
                     ],
                     dimensions: [{ name: 'date' }],
-                    dimensionFilter: platformFilter ? { andGroup: { expressions: [platformFilter] } } : undefined
+                    dimensionFilter
                 });
 
                 const rows = response.rows || [];
@@ -231,7 +248,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     dateRanges: [{ startDate: period === '30d' ? '30daysAgo' : '7daysAgo', endDate: 'today' }],
                     dimensions: [{ name: 'sessionSource' }, { name: 'sessionMedium' }, { name: 'sessionCampaign' }],
                     metrics: [{ name: 'activeUsers' }, { name: 'sessions' }, { name: 'conversions' }],
-                    dimensionFilter: platformFilter ? { andGroup: { expressions: [platformFilter] } } : undefined
+                    dimensionFilter
                 });
 
                 const channels = (response.rows || []).map(row => {
@@ -285,7 +302,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     dimensionFilter: {
                         andGroup: {
                             expressions: [
-                                ...(platformFilter ? [platformFilter] : []),
+                                ...(dimensionFilter?.andGroup?.expressions || []),
                                 {
                                     orGroup: {
                                         expressions: [
@@ -364,9 +381,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     property: `properties/${propertyId}`,
                     dateRanges: [{ startDate: period === '30d' ? '30daysAgo' : '7daysAgo', endDate: 'today' }],
                     metrics: [{ name: 'activeUsers' }],
-                    dimensionFilter: platformFilter ? { andGroup: { expressions: [platformFilter] } } : undefined
-                    // 필요 시 Photographer 전용 필터 적용
-                    // dimensionFilter: { filter: { fieldName: 'customEvent:user_type', stringFilter: { value: 'photographer' } } }
+                    dimensionFilter
                 });
 
                 const activeCreators = parseInt(gaResponse.rows?.[0]?.metricValues?.[0]?.value || '145');

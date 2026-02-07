@@ -11,10 +11,10 @@ import {
 
 export default function GeneralDashboard() {
     const [data, setData] = useState<any>(null);
-    const [filters, setFilters] = useState({ period: '7d', platform: 'all' });
+    const [filters, setFilters] = useState({ period: '7d', platform: 'all', userType: 'all' });
 
     useEffect(() => {
-        getGeneralKPI(filters.period, filters.platform).then(setData);
+        getGeneralKPI(filters.period, filters.platform, filters.userType).then(setData);
     }, [filters]);
 
     const handleFilterChange = (newFilter: any) => {

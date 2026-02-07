@@ -9,10 +9,10 @@ const COLORS = ['#00A980', '#00C49F', '#FFBB28', '#FF8042'];
 
 export default function AcquisitionDashboard() {
     const [data, setData] = useState<any>(null);
-    const [filters, setFilters] = useState({ period: '7d', platform: 'all' });
+    const [filters, setFilters] = useState({ period: '7d', platform: 'all', userType: 'all' });
 
     useEffect(() => {
-        getAcquisitionData(filters.period, filters.platform).then(setData);
+        getAcquisitionData(filters.period, filters.platform, filters.userType).then(setData);
     }, [filters]);
 
     const handleFilterChange = (newFilter: any) => {

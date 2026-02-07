@@ -7,10 +7,21 @@ import {
 
 export default function FunnelDashboard() {
     const [data, setData] = useState<any>(null);
-    const [filters, setFilters] = useState({ period: '7d', platform: 'all' });
+    const [filters, setFilters] = useState({ period: '7d', platform: 'all', userType: 'all' });
+    const [referenceMax, setReferenceMax] = useState<number>(0);
 
     useEffect(() => {
-        getFunnelData(filters.period, filters.platform).then(setData);
+        // 필터와 상관없이 해당 '기간'의 전체 기준 최대값을 참조용으로 조회
+        getFunnelData(filters.period, 'all', 'all').then(res => {
+            const counts = res.communityInteractions?.map((item: any) => item.count) || [];
+            const max = counts.length > 0 ? Math.max(...counts) : 0;
+            // Y축 상단에 여유를 주기 위해 15% 정도 올림
+            setReferenceMax(Math.ceil(max * 1.15));
+        });
+    }, [filters.period]);
+
+    useEffect(() => {
+        getFunnelData(filters.period, filters.platform, filters.userType).then(setData);
     }, [filters]);
 
     const handleFilterChange = (newFilter: any) => {
@@ -125,7 +136,12 @@ export default function FunnelDashboard() {
                                         angle={-15}
                                         textAnchor="end"
                                     />
-                                    <YAxis axisLine={false} tickLine={false} tick={{ fill: '#9ca3af', fontSize: 11 }} />
+                                    <YAxis
+                                        axisLine={false}
+                                        tickLine={false}
+                                        tick={{ fill: '#9ca3af', fontSize: 11 }}
+                                        domain={[0, referenceMax || 'auto']}
+                                    />
                                     <Tooltip cursor={{ fill: '#f9fafb' }} />
                                     <Bar dataKey="count" fill="#3b82f6" radius={[6, 6, 0, 0]} barSize={35} minPointSize={2}>
                                         <LabelList dataKey="count" position="top" style={{ fontWeight: '900', fontSize: '12px', fill: '#374151' }} />
