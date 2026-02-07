@@ -101,10 +101,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const fetchGA4Report = async (options: any) => {
             try {
                 const [response] = await analyticsClient.runReport(options);
+                console.log("GA4 Response Rows:", response.rows?.length); // 0이 나오는지 확인
                 return response;
             } catch (err: any) {
-                console.error("GA4 Report API Error:", err.message);
-                // 필터 디멘션 미등록 등으로 인한 에러 시 폴백
+                console.error("실제 에러 메시지:", err.details || err.message); // 여기서 권한 에러인지 필터 에러인지 나옵니다.
                 return { rows: [], totals: [] };
             }
         };
