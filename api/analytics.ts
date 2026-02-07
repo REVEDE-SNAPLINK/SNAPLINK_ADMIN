@@ -7,7 +7,7 @@ const propertyId = process.env.GA4_PROPERTY_ID;
 const bigQueryProjectId = process.env.BIGQUERY_PROJECT_ID;
 const credentials = {
     client_email: process.env.GA4_CLIENT_EMAIL,
-    private_key: process.env.GA4_PRIVATE_KEY,
+    private_key: process.env.GA4_PRIVATE_KEY?.replace(/\\n/g, '\n'),
 };
 
 const analyticsClient = new BetaAnalyticsDataClient({ credentials });
