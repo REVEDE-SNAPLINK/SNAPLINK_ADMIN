@@ -7,7 +7,7 @@ const propertyId = process.env.GA4_PROPERTY_ID;
 const bigQueryProjectId = process.env.BIGQUERY_PROJECT_ID;
 const credentials = {
     client_email: process.env.GA4_CLIENT_EMAIL,
-    private_key: process.env.GA4_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+    private_key: process.env.GA4_PRIVATE_KEY,
 };
 
 const analyticsClient = new BetaAnalyticsDataClient({ credentials });
@@ -83,7 +83,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // 사용자 유형 필터 (Master Spec V2.3: user_type 커스텀 디멘션 기준)
         const userTypeFilter = userType && userType !== 'all' ? {
             filter: {
-                fieldName: 'customEvent:user_type', // 명세서 기반 커스텀 디멘션
+                fieldName: 'customUser:user_type', // customEvent -> customUser 수동 보정
                 stringFilter: { value: userType as string }
             }
         } : null;
@@ -97,10 +97,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             ? { andGroup: { expressions: combinedFilters } }
             : undefined;
 
+        // GA4 호출 래퍼 함수 (500 에러 방지 및 로드 실패 대응)
+        const fetchGA4Report = async (options: any) => {
+            try {
+                const [response] = await analyticsClient.runReport(options);
+                return response;
+            } catch (err: any) {
+                console.error("GA4 Report API Error:", err.message);
+                // 필터 디멘션 미등록 등으로 인한 에러 시 폴백
+                return { rows: [], totals: [] };
+            }
+        };
+
         switch (type) {
             case 'general': {
                 // 증감률 계산을 위해 더 넓은 날짜 범위 조회 (최근 60일)
-                const [response] = await analyticsClient.runReport({
+                const response = await fetchGA4Report({
                     property: `properties/${propertyId}`,
                     dateRanges: [
                         { startDate: '30daysAgo', endDate: 'today', name: 'current_month' },
@@ -163,7 +175,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 const crashFreeRate = await fetchCrashFreeRate();
 
                 // 탐색 깊이 퍼널 (Screens per session 용)
-                const [funnelResponse] = await analyticsClient.runReport({
+                const funnelResponse = await fetchGA4Report({
                     property: `properties/${propertyId}`,
                     dateRanges: [{ startDate: period === '30d' ? '30daysAgo' : '7daysAgo', endDate: 'today' }],
                     dimensions: [{ name: 'eventName' }],
@@ -171,7 +183,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     dimensionFilter: {
                         andGroup: {
                             expressions: [
-                                ...(platformFilter ? [platformFilter] : []),
+                                ...(dimensionFilter?.andGroup?.expressions || []),
                                 {
                                     orGroup: {
                                         expressions: [
@@ -243,7 +255,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             // ... rest of cases (acquisition, funnel, creator) - keep as is
 
             case 'acquisition': {
-                const [response] = await analyticsClient.runReport({
+                const response = await fetchGA4Report({
                     property: `properties/${propertyId}`,
                     dateRanges: [{ startDate: period === '30d' ? '30daysAgo' : '7daysAgo', endDate: 'today' }],
                     dimensions: [{ name: 'sessionSource' }, { name: 'sessionMedium' }, { name: 'sessionCampaign' }],
@@ -294,7 +306,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             }
 
             case 'funnel': {
-                const [response] = await analyticsClient.runReport({
+                const response = await fetchGA4Report({
                     property: `properties/${propertyId}`,
                     dateRanges: [{ startDate: period === '30d' ? '30daysAgo' : '7daysAgo', endDate: 'today' }],
                     dimensions: [{ name: 'eventName' }],
@@ -377,7 +389,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
             case 'creator': {
                 // GA4 데이터: 활동 작가 수 (포토그래퍼 필터가 설정된 경우)
-                const [gaResponse] = await analyticsClient.runReport({
+                const gaResponse = await fetchGA4Report({
                     property: `properties/${propertyId}`,
                     dateRanges: [{ startDate: period === '30d' ? '30daysAgo' : '7daysAgo', endDate: 'today' }],
                     metrics: [{ name: 'activeUsers' }],

@@ -93,7 +93,6 @@ export default function FunnelDashboard() {
             {/* Section 3: Discovery & Community */}
             <div className="mb-12">
                 <h2 className="text-2xl font-black text-gray-900 mb-8 flex items-center gap-2">
-                    <span className="w-10 h-10 bg-black text-white rounded-xl flex items-center justify-center text-lg shadow-lg">3</span>
                     탐색 및 커뮤니티 지표
                 </h2>
 
@@ -156,7 +155,6 @@ export default function FunnelDashboard() {
             {/* Section 4: Booking Funnel */}
             <div>
                 <h2 className="text-2xl font-black text-gray-900 mb-8 flex items-center gap-2">
-                    <span className="w-10 h-10 bg-black text-white rounded-xl flex items-center justify-center text-lg shadow-lg">4</span>
                     예약 지표 (단계별 도달 수)
                 </h2>
 
