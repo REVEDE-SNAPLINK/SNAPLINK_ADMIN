@@ -57,7 +57,10 @@ async function fetchCrashFreeRate(): Promise<string> {
     `;
 
     try {
-        const [rows] = await bigquery.query({ query });
+        const [rows] = await bigquery.query({
+            query,
+            location: 'asia-northeast3'
+        });
         return rows[0]?.rate?.toString() || "100";
     } catch (err) {
         console.error("BigQuery Crash-free Rate Query Error:", err);
