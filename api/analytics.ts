@@ -257,12 +257,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     dimensionFilter: {
                         orGroup: {
                             expressions: [
-                                // 탐색/커뮤니티 관련 이벤트 (Master Spec 반영)
-                                { filter: { fieldName: 'eventName', inListFilter: { values: ['community_post_view', 'photographer_profile_view', 'booking_intent', 'booking_request_submitted', 'booking_confirmed'] } } },
-                                // 상호작용 관련 이벤트
-                                { filter: { fieldName: 'eventName', inListFilter: { values: ['community_post_like', 'community_comment_create', 'chat_initiated'] } } },
-                                // 문의 관련 이벤트
-                                { filter: { fieldName: 'eventName', inListFilter: { values: ['chat_message_sent', 'photographer_response'] } } }
+                                // 탐색/커뮤니티 관련 이벤트 (Master Spec V2.3 반영)
+                                { filter: { fieldName: 'eventName', inListFilter: { values: ['home_feed_view', 'portfolio_post_view', 'creator_card_view', 'photographer_profile_view', 'chat_initiated'] } } },
+                                // 커뮤니티 상호작용
+                                { filter: { fieldName: 'eventName', inListFilter: { values: ['community_post_create', 'community_post_view', 'community_post_like', 'community_comment_create', 'community_post_share'] } } },
+                                // 문의 및 예약
+                                { filter: { fieldName: 'eventName', inListFilter: { values: ['chat_message_sent', 'photographer_response', 'booking_intent', 'booking_request_submitted', 'booking_confirmed', 'booking_cancelled'] } } }
                             ]
                         }
                     }
@@ -275,7 +275,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
                 const createFunnel = (stages: any[], baseKey: string) => {
                     const baseCount = eventData[baseKey] || 0;
-                    return stages.map((s, _) => {
+                    return stages.map((s) => {
                         const count = eventData[s.key] || 0;
                         return {
                             stage: s.stage,
@@ -286,34 +286,34 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 };
 
                 finalResult = {
-                    // (A) 작가/콘텐츠 탐색 퍼널
+                    // (A) 작가/콘텐츠 탐색 퍼널 (V2.3: Feed -> Post -> Card -> Profile -> Inquiry)
                     discoveryFunnel: createFunnel([
-                        { stage: 'Content View', key: 'community_post_view' },
-                        { stage: 'Profile View', key: 'photographer_profile_view' },
-                        { stage: 'Booking Intent', key: 'booking_intent' },
-                        { stage: 'Request Submit', key: 'booking_request_submitted' },
-                        { stage: 'Booking Confirm', key: 'booking_confirmed' }
-                    ], 'community_post_view'),
+                        { stage: 'Feed', key: 'home_feed_view' },
+                        { stage: 'Post', key: 'portfolio_post_view' },
+                        { stage: 'Card', key: 'creator_card_view' },
+                        { stage: 'Profile', key: 'photographer_profile_view' },
+                        { stage: 'Inquiry', key: 'chat_initiated' }
+                    ], 'home_feed_view'),
 
-                    // (B) 커뮤니티 상호작용 (Vertical Bar Chart용)
+                    // (B) 커뮤니티 상호작용 (Engagement)
                     communityInteractions: [
-                        { name: 'Post View', count: eventData['community_post_view'] || 0 },
-                        { name: 'Likes', count: eventData['community_post_like'] || 0 },
-                        { name: 'Comments', count: eventData['community_comment_create'] || 0 },
-                        { name: 'Chat Start', count: eventData['chat_initiated'] || 0 }
+                        { name: 'Creation', count: eventData['community_post_create'] || 0 },
+                        { name: 'View', count: eventData['community_post_view'] || 0 },
+                        { name: 'Like', count: eventData['community_post_like'] || 0 },
+                        { name: 'Comment', count: eventData['community_comment_create'] || 0 },
+                        { name: 'Share', count: eventData['community_post_share'] || 0 }
                     ],
 
-                    // 2.3 & 5) 예약 퍼널 (확정/취소 분기 반영)
-                    inquiryFunnel: {
+                    // 4) 문의 및 예약 퍼널 (Booking Pipeline)
+                    bookingFunnel: {
                         steps: createFunnel([
-                            { stage: 'Chat Initiated', key: 'chat_initiated' },
-                            { stage: 'Msg Sent', key: 'chat_message_sent' },
-                            { stage: 'Artist Response', key: 'photographer_response' },
-                            { stage: 'Request Submit', key: 'booking_request_submitted' }
-                        ], 'chat_initiated'),
+                            { stage: 'Booking Intent', key: 'booking_intent' },
+                            { stage: 'Form Submit', key: 'booking_request_submitted' },
+                            { stage: 'Confirmed', key: 'booking_confirmed' }
+                        ], 'booking_intent'),
                         final: [
                             { stage: 'Booking Confirmed', count: eventData['booking_confirmed'] || 0, isPositive: true },
-                            { stage: 'Cancelled', count: (eventData['booking_cancelled'] || 0), isPositive: false }
+                            { stage: 'Cancelled', count: eventData['booking_cancelled'] || 0, isPositive: false }
                         ]
                     }
                 };

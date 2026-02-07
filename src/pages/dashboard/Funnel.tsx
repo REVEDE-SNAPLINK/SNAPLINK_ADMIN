@@ -104,7 +104,7 @@ export default function FunnelDashboard() {
                     <div className="bg-white p-10 rounded-2xl shadow-sm border border-gray-100">
                         <div className="mb-10">
                             <h3 className="text-2xl font-black text-gray-900 tracking-tight leading-none mb-2">(B) 커뮤니티 상호작용</h3>
-                            <p className="text-sm font-bold text-gray-400">게시글 생성, 시청, 좋아요, 댓글, 공유 활성도</p>
+                            <p className="text-sm font-bold text-gray-400">콘텐츠 생산, 조회, 좋아요, 댓글, 공유 활성도</p>
                         </div>
 
                         <div className="h-[400px]">

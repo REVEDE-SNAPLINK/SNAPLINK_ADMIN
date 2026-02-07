@@ -76,17 +76,31 @@ export const getFunnelData = async (period: string): Promise<any> => {
         return response.data;
     } catch (error) {
         return {
-            bookingFunnel: [
-                { stage: '프로필 조회', count: 10000, percentage: 100 },
-                { stage: '예약 시도', count: 4500, percentage: 45 },
-                { stage: '예약 요청', count: 1200, percentage: 12 },
-                { stage: '계약 성사', count: 800, percentage: 8 },
+            discoveryFunnel: [
+                { stage: 'Feed', count: 12000, percentage: 100 },
+                { stage: 'Post', count: 8500, percentage: 71 },
+                { stage: 'Card', count: 4200, percentage: 35 },
+                { stage: 'Profile', count: 2100, percentage: 18 },
+                { stage: 'Inquiry', count: 450, percentage: 4 },
             ],
-            chatFunnel: [
-                { stage: '채팅 시작', count: 5000, percentage: 100 },
-                { stage: '작가 응답', count: 3500, percentage: 70 },
-                { stage: '예약 확정', count: 1800, percentage: 36 },
-            ]
+            communityInteractions: [
+                { name: 'Creation', count: 120 },
+                { name: 'View', count: 8500 },
+                { name: 'Like', count: 420 },
+                { name: 'Comment', count: 156 },
+                { name: 'Share', count: 84 }
+            ],
+            bookingFunnel: {
+                steps: [
+                    { stage: 'Booking Intent', count: 2100, percentage: 100 },
+                    { stage: 'Form Submit', count: 450, percentage: 21 },
+                    { stage: 'Confirmed', count: 180, percentage: 9 },
+                ],
+                final: [
+                    { stage: 'Booking Confirmed', count: 180, isPositive: true },
+                    { stage: 'Cancelled', count: 45, isPositive: false }
+                ]
+            }
         };
     }
 };
