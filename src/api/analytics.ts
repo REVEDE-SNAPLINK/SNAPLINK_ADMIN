@@ -7,9 +7,9 @@ export interface AnalyticsData {
     charts: any[];
 }
 
-export const getGeneralKPI = async (period: string, platform?: string, userType?: string): Promise<any> => {
+export const getGeneralKPI = async (period: string, platform?: string, userType?: string, startDate?: string, endDate?: string): Promise<any> => {
     try {
-        const response = await axios.get(`/api/analytics?type=general&period=${period}${platform ? `&platform=${platform}` : ''}${userType ? `&userType=${userType}` : ''}`);
+        const response = await axios.get(`/api/analytics?type=general&period=${period}${platform ? `&platform=${platform}` : ''}${userType ? `&userType=${userType}` : ''}${startDate ? `&startDate=${startDate}` : ''}${endDate ? `&endDate=${endDate}` : ''}`);
         return response.data;
     } catch (error) {
         // Fallback or handle error
@@ -52,9 +52,9 @@ export const getGeneralKPI = async (period: string, platform?: string, userType?
     }
 };
 
-export const getAcquisitionData = async (period: string, platform?: string, userType?: string): Promise<any> => {
+export const getAcquisitionData = async (period: string, platform?: string, userType?: string, startDate?: string, endDate?: string): Promise<any> => {
     try {
-        const response = await axios.get(`/api/analytics?type=acquisition&period=${period}${platform ? `&platform=${platform}` : ''}${userType ? `&userType=${userType}` : ''}`);
+        const response = await axios.get(`/api/analytics?type=acquisition&period=${period}${platform ? `&platform=${platform}` : ''}${userType ? `&userType=${userType}` : ''}${startDate ? `&startDate=${startDate}` : ''}${endDate ? `&endDate=${endDate}` : ''}`);
         return response.data;
     } catch (error) {
         return {
@@ -76,9 +76,9 @@ export const getAcquisitionData = async (period: string, platform?: string, user
     }
 };
 
-export const getFunnelData = async (period: string, platform?: string, userType?: string): Promise<any> => {
+export const getFunnelData = async (period: string, platform?: string, userType?: string, startDate?: string, endDate?: string): Promise<any> => {
     try {
-        const response = await axios.get(`/api/analytics?type=funnel&period=${period}${platform ? `&platform=${platform}` : ''}${userType ? `&userType=${userType}` : ''}`);
+        const response = await axios.get(`/api/analytics?type=funnel&period=${period}${platform ? `&platform=${platform}` : ''}${userType ? `&userType=${userType}` : ''}${startDate ? `&startDate=${startDate}` : ''}${endDate ? `&endDate=${endDate}` : ''}`);
         return response.data;
     } catch (error) {
         return {
@@ -111,9 +111,9 @@ export const getFunnelData = async (period: string, platform?: string, userType?
     }
 };
 
-export const getCreatorData = async (period: string, platform?: string, userType?: string): Promise<any> => {
+export const getCreatorData = async (period: string, platform?: string, userType?: string, startDate?: string, endDate?: string): Promise<any> => {
     try {
-        const response = await axios.get(`/api/analytics?type=creator&period=${period}${platform ? `&platform=${platform}` : ''}${userType ? `&userType=${userType}` : ''}`);
+        const response = await axios.get(`/api/analytics?type=creator&period=${period}${platform ? `&platform=${platform}` : ''}${userType ? `&userType=${userType}` : ''}${startDate ? `&startDate=${startDate}` : ''}${endDate ? `&endDate=${endDate}` : ''}`);
         return response.data;
     } catch (error) {
         return {

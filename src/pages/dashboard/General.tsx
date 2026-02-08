@@ -11,10 +11,10 @@ import {
 
 export default function GeneralDashboard() {
     const [data, setData] = useState<any>(null);
-    const [filters, setFilters] = useState({ period: '7d', platform: 'all', userType: 'all' });
+    const [filters, setFilters] = useState({ period: '7d', platform: 'all', userType: 'all', startDate: '', endDate: '' });
 
     useEffect(() => {
-        getGeneralKPI(filters.period, filters.platform, filters.userType).then(setData);
+        getGeneralKPI(filters.period, filters.platform, filters.userType, filters.startDate, filters.endDate).then(setData);
     }, [filters]);
 
     const handleFilterChange = (newFilter: any) => {
@@ -27,6 +27,7 @@ export default function GeneralDashboard() {
         <div className="p-8 pb-32">
             <DashboardHeader
                 title="핵심 서비스 지표"
+                filters={filters}
                 onFilterChange={handleFilterChange}
             />
 

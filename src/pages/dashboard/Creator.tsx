@@ -8,10 +8,10 @@ import {
 
 export default function CreatorDashboard() {
     const [data, setData] = useState<any>(null);
-    const [filters, setFilters] = useState({ period: '7d', platform: 'all', userType: 'all' });
+    const [filters, setFilters] = useState({ period: '7d', platform: 'all', userType: 'all', startDate: '', endDate: '' });
 
     useEffect(() => {
-        getCreatorData(filters.period, filters.platform, filters.userType).then(setData);
+        getCreatorData(filters.period, filters.platform, filters.userType, filters.startDate, filters.endDate).then(setData);
     }, [filters]);
 
     const handleFilterChange = (newFilter: any) => {
@@ -24,6 +24,7 @@ export default function CreatorDashboard() {
         <div className="p-8 pb-32">
             <DashboardHeader
                 title="공급자(작가) 퍼포먼스"
+                filters={filters}
                 onFilterChange={handleFilterChange}
             />
 

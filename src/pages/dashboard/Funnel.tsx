@@ -7,7 +7,7 @@ import {
 
 export default function FunnelDashboard() {
     const [data, setData] = useState<any>(null);
-    const [filters, setFilters] = useState({ period: '7d', platform: 'all', userType: 'all' });
+    const [filters, setFilters] = useState({ period: '7d', platform: 'all', userType: 'all', startDate: '', endDate: '' });
     const [referenceMax, setReferenceMax] = useState<number>(0);
 
     useEffect(() => {
@@ -21,7 +21,7 @@ export default function FunnelDashboard() {
     }, [filters.period]);
 
     useEffect(() => {
-        getFunnelData(filters.period, filters.platform, filters.userType).then(setData);
+        getFunnelData(filters.period, filters.platform, filters.userType, filters.startDate, filters.endDate).then(setData);
     }, [filters]);
 
     const handleFilterChange = (newFilter: any) => {
@@ -87,6 +87,7 @@ export default function FunnelDashboard() {
         <div className="p-8 pb-32">
             <DashboardHeader
                 title="탐색/커뮤니티 및 예약 분석"
+                filters={filters}
                 onFilterChange={handleFilterChange}
             />
 
