@@ -177,21 +177,28 @@ export default async function handler(
                 return acc;
             }, {});
 
-            const baseF = fData['home_feed_view'] || 1;
-            const screensFunnel = [
+            const initialScreensCounts = [
                 { stage: '홈 피드', key: 'home_feed_view' },
                 { stage: '작가 상세', key: 'portfolio_post_view' },
                 { stage: '작가 카드', key: 'creator_card_view' },
                 { stage: '작가 프로필', key: 'photographer_profile_view' },
                 { stage: '문의 시작', key: 'chat_initiated' },
-            ].map(s => {
-                const count = fData[s.key] || 0;
-                return {
-                    stage: s.stage,
-                    count: count,
-                    percentage: Math.round((count / baseF) * 100)
-                };
-            });
+            ].map(s => ({ ...s, count: fData[s.key] || 0 }));
+
+            // 누적 보정 (하위 단계 유저는 상위 단계를 거쳤음을 전제)
+            for (let i = initialScreensCounts.length - 2; i >= 0; i--) {
+                initialScreensCounts[i].count = Math.max(
+                    initialScreensCounts[i].count,
+                    initialScreensCounts[i + 1].count
+                );
+            }
+
+            const baseF = Math.max(fData['home_feed_view'] || 0, initialScreensCounts[0].count, 1);
+            const screensFunnel = initialScreensCounts.map(s => ({
+                stage: s.stage,
+                count: s.count,
+                percentage: Math.round((s.count / baseF) * 100)
+            }));
 
             /* ---------------- Fixed Metrics (Today-based) ---------------- */
             // 사용자의 요청: DAU, WAU, MAU는 선택된 기간과 상관없이 '오늘' 기준으로 고정
@@ -365,15 +372,25 @@ export default async function handler(
             }, {});
 
             const createFnl = (stages: any[], baseKey: string) => {
-                const baseCount = eventData[baseKey] || 0;
-                return stages.map((s) => {
-                    const count = eventData[s.key] || 0;
-                    return {
-                        stage: s.stage,
-                        count: count,
-                        percentage: baseCount > 0 ? Math.round((count / baseCount) * 100) : 0
-                    };
-                });
+                const initialCounts = stages.map(s => ({
+                    ...s,
+                    count: eventData[s.key] || 0
+                }));
+
+                // 누적 보정 (역순으로 올라오며 MAX 적용)
+                for (let i = initialCounts.length - 2; i >= 0; i--) {
+                    initialCounts[i].count = Math.max(
+                        initialCounts[i].count,
+                        initialCounts[i + 1].count
+                    );
+                }
+
+                const baseCount = Math.max(eventData[baseKey] || 0, initialCounts[0].count, 1);
+                return initialCounts.map((s) => ({
+                    stage: s.stage,
+                    count: s.count,
+                    percentage: Math.round((s.count / baseCount) * 100)
+                }));
             };
 
             res.status(200).json({
