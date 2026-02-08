@@ -29,14 +29,15 @@ export default function GeneralDashboard() {
                 title="핵심 서비스 지표"
                 filters={filters}
                 onFilterChange={handleFilterChange}
+                metadata={data.metadata}
             />
 
             {/* Top Row: Core Metrics & Stickiness */}
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
                 <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <MetricCard title="DAU (일일 활성)" value={data.metrics?.DAU?.toLocaleString() ?? "0"} change={data.metrics?.dauChange} isPositive={data.metrics?.dauChange > 0} />
-                    <MetricCard title="WAU (주간 활성)" value={data.metrics?.WAU?.toLocaleString() ?? "0"} change={data.metrics?.wauChange} isPositive={data.metrics?.wauChange > 0} />
-                    <MetricCard title="MAU (월간 활성)" value={data.metrics?.MAU?.toLocaleString() ?? "0"} change={data.metrics?.mauChange} isPositive={data.metrics?.mauChange > 0} />
+                    <MetricCard title="DAU (일일 활성)" value={data.metrics?.DAU?.toLocaleString() ?? "0"} change={data.metrics?.dauChange} isPositive={data.metrics?.dauChange > 0} subtitle={data.metrics?.dauPeriod} />
+                    <MetricCard title="WAU (주간 활성)" value={data.metrics?.WAU?.toLocaleString() ?? "0"} change={data.metrics?.wauChange} isPositive={data.metrics?.wauChange > 0} subtitle={data.metrics?.wauPeriod} />
+                    <MetricCard title="MAU (월간 활성)" value={data.metrics?.MAU?.toLocaleString() ?? "0"} change={data.metrics?.mauChange} isPositive={data.metrics?.mauChange > 0} subtitle={data.metrics?.mauPeriod} />
                 </div>
                 <div className="lg:col-span-1">
                     <StickinessGauge value={data.metrics?.stickiness} />

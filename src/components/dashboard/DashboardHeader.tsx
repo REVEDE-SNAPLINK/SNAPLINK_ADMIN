@@ -4,9 +4,13 @@ interface DashboardHeaderProps {
     title: string;
     filters: any;
     onFilterChange: (filters: any) => void;
+    metadata?: {
+        firstDataDate?: string;
+        maxDate?: string;
+    };
 }
 
-export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ title, filters, onFilterChange }) => {
+export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ title, filters, onFilterChange, metadata }) => {
     return (
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
             <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
@@ -31,6 +35,8 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ title, filters
                                 type="date"
                                 className="bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-xs font-medium focus:ring-2 focus:ring-[#00A980] outline-none"
                                 value={filters.startDate || ''}
+                                min={metadata?.firstDataDate}
+                                max={metadata?.maxDate}
                                 onChange={(e) => onFilterChange({ startDate: e.target.value })}
                             />
                             <span className="text-gray-400 text-xs">~</span>
@@ -38,6 +44,8 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ title, filters
                                 type="date"
                                 className="bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-xs font-medium focus:ring-2 focus:ring-[#00A980] outline-none"
                                 value={filters.endDate || ''}
+                                min={metadata?.firstDataDate}
+                                max={metadata?.maxDate}
                                 onChange={(e) => onFilterChange({ endDate: e.target.value })}
                             />
                         </div>
