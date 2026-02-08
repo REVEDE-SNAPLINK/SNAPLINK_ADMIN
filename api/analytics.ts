@@ -131,20 +131,6 @@ export default async function handler(
 
             /* ---------------- DAU ---------------- */
 
-            const totalActiveUsers = toInt(
-                report.totals?.[0]?.metricValues?.[0]?.value
-            );
-
-            /* ---------------- Fixed Metrics (Today-based) ---------------- */
-
-            const totalSessions = toInt(
-                report.totals?.[0]?.metricValues?.[1]?.value
-            );
-
-            const avgSessionSec = toFloat(
-                report.totals?.[0]?.metricValues?.[2]?.value
-            );
-
             /* ---------------- screensFunnel ---------------- */
 
             const [funnelReport] = await analyticsClient.runReport({
@@ -231,6 +217,19 @@ export default async function handler(
                 ? formatDate(firstDateReport.rows[0].dimensionValues[0].value)
                 : '2024-01-01';
 
+            /* ---------------- Summary Metrics Calculation ---------------- */
+
+            // 차트 데이터가 있는 날짜들을 기준으로 '평균의 평균' 산출 (시각적 일관성 확보)
+            const validCharts = charts.filter(c => c.dau > 0 || c.sessions > 0);
+
+            const avgSessionsPerUser = validCharts.length > 0
+                ? validCharts.reduce((acc, c) => acc + (c.sessions / (c.dau || 1)), 0) / validCharts.length
+                : 0;
+
+            const avgDurationPerDay = validCharts.length > 0
+                ? validCharts.reduce((acc, c) => acc + c.sessionDuration, 0) / validCharts.length
+                : 0;
+
             res.status(200).json({
                 metadata: {
                     firstDataDate,
@@ -249,16 +248,14 @@ export default async function handler(
                     mauPeriod: '(최근 30일)',
                     mauChange: 0,
 
-                    stickiness: Number(
-                        ((fixedDAU / (fixedMAU || 1)) * 100).toFixed(1)
-                    ),
+                    stickiness: (fixedMAU > 0)
+                        ? Number(Math.min((fixedDAU / fixedMAU) * 100, 100).toFixed(1))
+                        : 0,
 
-                    avgSessionDuration: formatDuration(avgSessionSec),
-                    avgUserEngagement: formatDuration(avgSessionSec),
+                    avgSessionDuration: formatDuration(avgDurationPerDay),
+                    avgUserEngagement: formatDuration(avgDurationPerDay),
 
-                    sessionsPerUser: Number(
-                        (totalSessions / (totalActiveUsers || 1)).toFixed(2)
-                    ),
+                    sessionsPerUser: Number(avgSessionsPerUser.toFixed(2)),
 
                     crashFreeUsers: '99.9',
 
