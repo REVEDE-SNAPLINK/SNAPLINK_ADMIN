@@ -198,18 +198,18 @@ export default async function handler(
 
             const [fixedReport] = await analyticsClient.runReport({
                 property: `properties/${propertyId}`,
-                dateRanges: [
-                    { startDate: 'today', endDate: 'today' },       // DAU (오늘)
-                    { startDate: '7daysAgo', endDate: 'today' },    // WAU
-                    { startDate: '30daysAgo', endDate: 'today' }    // MAU
+                dateRanges: [{ startDate: 'today', endDate: 'today' }],
+                metrics: [
+                    { name: 'activeUsers' },       // DAU (오늘)
+                    { name: 'active7DayUsers' },    // WAU (최근 7일 rolling)
+                    { name: 'active28DayUsers' }    // MAU (최근 28일 rolling)
                 ],
-                metrics: [{ name: 'activeUsers' }],
                 dimensionFilter
             });
 
             const fixedDAU = toInt(fixedReport.rows?.[0]?.metricValues?.[0]?.value);
-            const fixedWAU = toInt(fixedReport.rows?.[1]?.metricValues?.[0]?.value);
-            const fixedMAU = toInt(fixedReport.rows?.[2]?.metricValues?.[0]?.value);
+            const fixedWAU = toInt(fixedReport.rows?.[0]?.metricValues?.[1]?.value);
+            const fixedMAU = toInt(fixedReport.rows?.[0]?.metricValues?.[2]?.value);
 
             // 데이터 수집 시작일 찾기 (최초 데이터가 있는 행의 날짜)
             const [firstDateReport] = await analyticsClient.runReport({
