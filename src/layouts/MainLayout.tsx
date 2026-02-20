@@ -19,7 +19,7 @@ const NAV_ITEMS = [
     {
         label: '촬영관리',
         subItems: [
-            { label: '일반 촬영 접수 내역', path: '/shootings' },
+            { label: '일반 촬영 접수 내역', path: '/shootings/general' },
             { label: '단체 행사 촬영 접수 내역', path: '/shootings/group' },
             { label: '촬영 등록', path: '/shootings/register' },
         ]

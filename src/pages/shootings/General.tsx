@@ -37,7 +37,7 @@ const STATUS_OPTIONS: ShootingStatus[] = [
     '촬영 완료', '작업물 전달완료', '정산완료', '매칭실패'
 ];
 
-export default function ShootingsPage() {
+export default function GeneralShooting() {
     const [shootings, setShootings] = useState<Shooting[]>(INITIAL_DATA);
 
     // Pagination State
@@ -101,8 +101,8 @@ export default function ShootingsPage() {
             header: '촬영등급',
             accessor: (item) => (
                 <span className={`font-bold ${item.grade === 'Master' ? 'text-purple-600' :
-                        item.grade === 'Pro' ? 'text-blue-600' :
-                            'text-gray-600' // Standard
+                    item.grade === 'Pro' ? 'text-blue-600' :
+                        'text-gray-600' // Standard
                     }`}>
                     {item.grade}
                 </span>

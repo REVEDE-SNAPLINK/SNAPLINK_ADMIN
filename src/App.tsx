@@ -4,7 +4,6 @@ import LoginPage from '@/pages/Login';
 import ChatPage from '@/pages/Chat';
 import SchedulePage from '@/pages/Schedule';
 import ReportsPage from '@/pages/Reports';
-import ShootingsPage from '@/pages/Shootings';
 import ReservationsPage from '@/pages/Reservations';
 import { useAuthStore } from '@/store/authStore';
 import { useEffect } from 'react';
@@ -14,6 +13,9 @@ import GeneralDashboard from '@/pages/dashboard/General';
 import AcquisitionDashboard from '@/pages/dashboard/Acquisition';
 import FunnelDashboard from '@/pages/dashboard/Funnel';
 import CreatorDashboard from '@/pages/dashboard/Creator';
+
+import GeneralShooting from '@/pages/shootings/General';
+import GroupShooting from '@/pages/shootings/Group';
 
 // Placeholder for other pages
 const Placeholder = ({ title }: { title: string }) => (
@@ -72,8 +74,8 @@ function App() {
           <Route path="/dashboard/creator" element={<CreatorDashboard />} />
 
           {/* 촬영관리 */}
-          <Route path="/shootings" element={<ShootingsPage />} />
-          <Route path="/shootings/group" element={<Placeholder title="단체 행사 촬영 접수 내역" />} />
+          <Route path="/shootings/general" element={<GeneralShooting />} />
+          <Route path="/shootings/group" element={<GroupShooting />} />
           <Route path="/shootings/register" element={<Placeholder title="촬영 등록" />} />
 
           {/* 일정관리 */}
