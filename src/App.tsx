@@ -14,8 +14,8 @@ import AcquisitionDashboard from '@/pages/dashboard/Acquisition';
 import FunnelDashboard from '@/pages/dashboard/Funnel';
 import CreatorDashboard from '@/pages/dashboard/Creator';
 
-import GeneralShooting from '@/pages/shootings/General';
 import GroupShooting from '@/pages/shootings/Group';
+import RegisterShooting from '@/pages/shootings/Register';
 
 // Placeholder for other pages
 const Placeholder = ({ title }: { title: string }) => (
@@ -74,9 +74,9 @@ function App() {
           <Route path="/dashboard/creator" element={<CreatorDashboard />} />
 
           {/* 촬영관리 */}
-          <Route path="/shootings/general" element={<GeneralShooting />} />
+          <Route path="/shootings/general" element={<Placeholder title="일반 촬영 접수 내역" />} />
           <Route path="/shootings/group" element={<GroupShooting />} />
-          <Route path="/shootings/register" element={<Placeholder title="촬영 등록" />} />
+          <Route path="/shootings/register" element={<RegisterShooting />} />
 
           {/* 일정관리 */}
           <Route path="/schedule" element={<SchedulePage />} />

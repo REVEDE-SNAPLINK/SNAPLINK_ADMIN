@@ -1,7 +1,8 @@
+import PageLayout from "@/layouts/PageLayout";
+
 export default function GroupShooting() {
     return (
-        <div className="pl-[32px] pt-[31px] pr-[36px] pb-[58px]">
-            <h1 className="ml-[5px] text-black font-bold text-[26px] mb-[28px]">단체 행사 촬영 접수 내역</h1>
+        <PageLayout title="단체 행사 촬영 접수 내역" onSearch={() => { }}>
             <div className="flex w-full h-[140px] bg-white mb-[22px] pl-[220px] box-border items-center gap-[92px]">
                 <div className="flex flex-col  gap-[2px] items-center">
                     <span className="text-[20px] text-black">전체</span>
@@ -52,6 +53,6 @@ export default function GroupShooting() {
                     <div className="text-[16px] text-black font-normal w-[150px] text-center">처리상태</div>
                 </div>
             </div>
-        </div>
+        </PageLayout>
     )
 }
