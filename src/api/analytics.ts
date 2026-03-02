@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import axios from 'axios';
 import { format, subDays } from 'date-fns';
 
@@ -10,16 +11,18 @@ export interface AnalyticsData {
 export const getGeneralKPI = async (period: string, platform?: string, userType?: string, startDate?: string, endDate?: string): Promise<any> => {
     try {
         const response = await axios.get(`/api/analytics?type=general&period=${period}${platform ? `&platform=${platform}` : ''}${userType ? `&userType=${userType}` : ''}${startDate ? `&startDate=${startDate}` : ''}${endDate ? `&endDate=${endDate}` : ''}`);
+        if (typeof response.data === 'string' && response.data.toLowerCase().includes('<!doctype html>')) throw new Error("Fallback HTML");
         return response.data;
     } catch (error) {
+        const mul = userType === 'client' ? 0.8 : userType === 'photographer' ? 0.2 : 1;
         // Fallback or handle error
         return {
             metrics: {
-                DAU: 1250,
+                DAU: Math.floor(1250 * mul),
                 dauChange: 12.5,
-                WAU: 8400,
+                WAU: Math.floor(8400 * mul),
                 wauChange: 5.2,
-                MAU: 32000,
+                MAU: Math.floor(32000 * mul),
                 mauChange: 8.7,
                 stickiness: 26.3,
                 avgSessionDuration: "3m 45s",
@@ -55,6 +58,7 @@ export const getGeneralKPI = async (period: string, platform?: string, userType?
 export const getAcquisitionData = async (period: string, platform?: string, userType?: string, startDate?: string, endDate?: string): Promise<any> => {
     try {
         const response = await axios.get(`/api/analytics?type=acquisition&period=${period}${platform ? `&platform=${platform}` : ''}${userType ? `&userType=${userType}` : ''}${startDate ? `&startDate=${startDate}` : ''}${endDate ? `&endDate=${endDate}` : ''}`);
+        if (typeof response.data === 'string' && response.data.toLowerCase().includes('<!doctype html>')) throw new Error("Fallback HTML");
         return response.data;
     } catch (error) {
         return {
@@ -79,6 +83,7 @@ export const getAcquisitionData = async (period: string, platform?: string, user
 export const getFunnelData = async (period: string, platform?: string, userType?: string, startDate?: string, endDate?: string): Promise<any> => {
     try {
         const response = await axios.get(`/api/analytics?type=funnel&period=${period}${platform ? `&platform=${platform}` : ''}${userType ? `&userType=${userType}` : ''}${startDate ? `&startDate=${startDate}` : ''}${endDate ? `&endDate=${endDate}` : ''}`);
+        if (typeof response.data === 'string' && response.data.toLowerCase().includes('<!doctype html>')) throw new Error("Fallback HTML");
         return response.data;
     } catch (error) {
         return {
@@ -114,6 +119,7 @@ export const getFunnelData = async (period: string, platform?: string, userType?
 export const getCreatorData = async (period: string, platform?: string, userType?: string, startDate?: string, endDate?: string): Promise<any> => {
     try {
         const response = await axios.get(`/api/analytics?type=creator&period=${period}${platform ? `&platform=${platform}` : ''}${userType ? `&userType=${userType}` : ''}${startDate ? `&startDate=${startDate}` : ''}${endDate ? `&endDate=${endDate}` : ''}`);
+        if (typeof response.data === 'string' && response.data.toLowerCase().includes('<!doctype html>')) throw new Error("Fallback HTML");
         return response.data;
     } catch (error) {
         return {

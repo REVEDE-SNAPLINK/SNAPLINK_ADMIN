@@ -1,9 +1,9 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
 import { useEffect } from 'react';
-import LogoIcon from '@/assets/icons/logo-white.svg';
-import LogoText from '@/assets/icons/logo-text-white.svg';
-import ArrowDownIcon from '@/assets/icons/arrow-down.svg';
+import LogoIcon from '@/assets/icons/logo/logo_white.svg';
+import LogoText from '@/assets/icons/logo/logo_text_white.svg';
+import ArrowDownIcon from '@/assets/icons/arrow_down.svg';
 
 // Sidebar items configuration
 const NAV_ITEMS = [
