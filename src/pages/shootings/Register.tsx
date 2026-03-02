@@ -9,7 +9,7 @@ registerLocale("ko", ko);
 
 import { FormSection } from "@/components/common/FormSection";
 import { Input } from "@/components/common/Input";
-import { DateInput } from "@/components/common/DateInput";
+import { DateInput } from "@/pages/shootings/components/DateInput";
 
 // --- Main Page ---
 
