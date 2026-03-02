@@ -218,9 +218,9 @@ export function MainLayout() {
                 </aside>
 
                 {/* Main Content */}
-                <main className="flex-1 overflow-y-auto overflow-x-hidden bg-[#EDF0F5]">
+                <main className="flex-1 flex flex-col overflow-hidden bg-[#EDF0F5]">
                     {/* Page Content */}
-                    <div className="min-h-full">
+                    <div className="flex-1 w-full h-full overflow-y-auto min-h-0 flex flex-col">
                         <Outlet />
                     </div>
                 </main>
