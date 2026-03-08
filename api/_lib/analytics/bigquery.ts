@@ -165,17 +165,6 @@ export const getPlatformClause = (platform?: string): string => {
  */
 export const getUserTypeClause = (userType?: string): string => {
     if (!userType || userType === 'all') return '1=1';
-
-    // 작가(photographer) 필터링: 유저 속성에 명시적으로 기록된 경우만
-    if (userType === 'photographer') {
-        return `(SELECT LOWER(value.string_value) FROM UNNEST(user_properties) WHERE key IN ('user_type', 'role', 'type') LIMIT 1) = 'photographer'`;
-    }
-
-    // 고객(client) 필터링: 작가가 아닌 모든 유저 (속성이 없거나 다른 값인 경우 포함)
-    if (userType === 'client') {
-        return `COALESCE((SELECT LOWER(value.string_value) FROM UNNEST(user_properties) WHERE key IN ('user_type', 'role', 'type') LIMIT 1), 'client') != 'photographer'`;
-    }
-
-    return '1=1';
+    return `(SELECT LOWER(value.string_value) FROM UNNEST(user_properties) WHERE key IN ('user_type', 'role', 'type') LIMIT 1) = LOWER('${userType}')`;
 };
 
