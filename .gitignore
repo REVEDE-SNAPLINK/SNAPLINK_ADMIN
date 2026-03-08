@@ -22,4 +22,5 @@ dist-ssr
 *.ntvs*
 *.njsproj
 *.sln
-*.sw?snaplink-bq-key.json
+*.sw?
+snaplink-bq-key.json
