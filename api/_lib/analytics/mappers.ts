@@ -87,41 +87,61 @@ export const mapGeneralKPI = (
 /**
  * 획득(Acquisition) 보고서 매퍼
  */
-export const mapAcquisitionData = (rows: any[]) => {
-    const channels = rows.map(row => {
+export const mapAcquisitionData = (trendRows: any[], channelRows: any[], activationRows: any[]) => {
+    // 1. 유입 규모 추이 (Line Chart)
+    const trend = trendRows.map(row => ({
+        name: formatDateYYMMDD(row.rawDate).slice(5), // MM-DD
+        installs: Number(row.installs) || 0,
+        opens: Number(row.first_opens) || 0,
+        signups: Number(row.sign_ups) || 0
+    }));
+
+    // 2. 핵심 서비스 활성화 지표 (Donut Chart)
+    const act = activationRows?.[0] || { total_new_users: 0, act_profile_view: 0, act_booking_intent: 0, act_message_sent: 0 };
+    const totalNew = Number(act.total_new_users) || 1;
+    const activation = [
+        { name: '작가 프로필 탐색', value: Number(act.act_profile_view) || 0, rate: Math.round(((Number(act.act_profile_view) || 0) / totalNew) * 100) },
+        { name: '예약 시도', value: Number(act.act_booking_intent) || 0, rate: Math.round(((Number(act.act_booking_intent) || 0) / totalNew) * 100) },
+        { name: '메시지 전송', value: Number(act.act_message_sent) || 0, rate: Math.round(((Number(act.act_message_sent) || 0) / totalNew) * 100) }
+    ];
+
+    // 3. 채널 및 링크 성과 (Bar Chart & Table)
+    const channels = channelRows.map(row => {
         const sess = Number(row.sessions) || 0;
-        const conv = Number(row.conversions) || 0;
+        const conv = Number(row.signups) || 0;
         const rate = sess > 0 ? (conv / sess) * 100 : 0;
         return {
             name: `${row.sessionSource} / ${row.sessionMedium}`,
+            source: row.sessionSource,
             campaign: row.sessionCampaign || '',
+            trackingCode: row.tracking_code || '',
             value: Number(row.activeUsers) || 0,
             sessions: sess,
-            conversion: rate.toFixed(1) + '%',
             conversionRate: Number(rate.toFixed(1))
         };
     });
 
     const sourceStats = channels.reduce((acc, curr) => {
-        const key = curr.name.split(' / ')[0];
+        const key = curr.source;
         acc[key] = (acc[key] || 0) + curr.value;
         return acc;
     }, {} as Record<string, number>);
 
     return {
+        trend,
+        activation,
         channels: Object.entries(sourceStats).map(([name, value]) => {
-            const channelData = channels.find(c => c.name.startsWith(name));
+            const channelData = channels.find(c => c.source === name);
             return {
                 name,
                 value,
-                conversion: channelData?.conversion || '0%',
                 conversionRate: channelData?.conversionRate || 0
             };
         }).sort((a, b) => b.value - a.value).slice(0, 5),
         links: channels
-            .filter(c => c.campaign !== '(not set)' && c.campaign !== '')
+            .filter(c => c.trackingCode !== '' || (c.campaign !== '(not set)' && c.campaign !== ''))
             .map(c => ({
-                name: c.campaign,
+                name: c.trackingCode || c.campaign,
                 users: c.value,
                 conversionRate: c.conversionRate,
                 status: c.conversionRate > 10 ? 'Excellent' : c.conversionRate > 5 ? 'Good' : 'Average'

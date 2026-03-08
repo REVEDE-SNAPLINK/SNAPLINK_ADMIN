@@ -4,7 +4,9 @@ import { runQuery } from './_lib/analytics/bigquery.js';
 import {
     buildGeneralDailyQuery,
     buildGeneralFixedActiveUsersQuery,
-    buildAcquisitionQuery,
+    buildAcquisitionTrendQuery,
+    buildAcquisitionChannelsQuery,
+    buildAcquisitionActivationQuery,
     buildEventFunnelQuery,
     buildCreatorQuery
 } from './_lib/analytics/queries.js';
@@ -90,12 +92,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
            ACQUISITION
         ===================================================== */
         if (type === 'acquisition') {
-            const rows = await runQuery(buildAcquisitionQuery(platform, userType), params).catch((e) => {
-                console.error('[BQ Error - Acquisition]', e.message || e);
-                return [];
-            });
-            const responseData = mapAcquisitionData(rows);
-            res.status(200).json(responseData);
+            const [trendRows, channelRows, activationRows] = await Promise.all([
+                runQuery(buildAcquisitionTrendQuery(platform, userType), params)
+                    .catch(e => { console.error('[BQ Error - AcqTrend]', e); return []; }),
+                runQuery(buildAcquisitionChannelsQuery(platform, userType), params)
+                    .catch(e => { console.error('[BQ Error - AcqChannels]', e); return []; }),
+                runQuery(buildAcquisitionActivationQuery(platform, userType), params)
+                    .catch(e => { console.error('[BQ Error - AcqActivation]', e); return []; })
+            ]);
+
+            res.status(200).json(mapAcquisitionData(trendRows, channelRows, activationRows));
             return;
         }
 

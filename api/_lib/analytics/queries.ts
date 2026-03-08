@@ -58,20 +58,39 @@ export const buildGeneralFixedActiveUsersQuery = (platform?: string, userType?: 
 `;
 
 /**
- * 획득 채널 데이터 (Acquisition)
+ * 획득 추이 데이터 (Acquisition Trend - Line Chart용)
+ * Install(추정), First Open, Sign-up 일자별 추이
  */
-export const buildAcquisitionQuery = (platform?: string, userType?: string) => `
+export const buildAcquisitionTrendQuery = (platform?: string, userType?: string) => `
+    SELECT 
+        event_date as rawDate,
+        -- 설치는 Firebase/GA4에서 별도 install 이벤트가 없을 경우 first_open을 최초 설치로 간주하거나, 
+        -- 실제 'app_install' 이벤트를 사용 (스냅링크는 'app_install' 혹은 'first_open' 활용 시나리오)
+        COUNT(IF(event_name = 'first_open', 1, NULL)) as installs,
+        COUNT(IF(event_name = 'first_open', 1, NULL)) as first_opens,
+        COUNT(IF(event_name = 'sign_up', 1, NULL)) as sign_ups
+    FROM \`${getGa4Table()}\`
+    WHERE ${getDateRangeClause()}
+      AND event_name IN ('first_open', 'sign_up', 'app_install')
+      AND ${getPlatformClause(platform)}
+      AND ${getUserTypeClause(userType)}
+    GROUP BY event_date
+    ORDER BY event_date ASC
+`;
+
+/**
+ * 획득 채널 및 고유 링크 상세 (Acquisition Channels - Bar Chart & Table용)
+ */
+export const buildAcquisitionChannelsQuery = (platform?: string, userType?: string) => `
     WITH base_events AS (
         SELECT 
-            -- Event Parameter 최우선 스니핑, 이후 Traffic Source fallback
             COALESCE(${getEventParamString('source')}, traffic_source.source, '(direct)') as sessionSource,
             COALESCE(${getEventParamString('medium')}, traffic_source.medium, '(none)') as sessionMedium,
             COALESCE(${getEventParamString('campaign')}, traffic_source.name, '(not set)') as sessionCampaign,
             COALESCE(${getEventParamString('tracking_code')}, '') as tracking_code,
             user_pseudo_id,
             ${getEventParamInt('ga_session_id')} as session_id,
-            -- 가입 성과 측정: sign_up, 혹은 first_open
-            IF(event_name IN ('sign_up', 'first_open'), 1, 0) as is_conversion
+            IF(event_name = 'sign_up', 1, 0) as is_signup
         FROM \`${getGa4Table()}\`
         WHERE ${getDateRangeClause()}
           AND ${getPlatformClause(platform)}
@@ -84,9 +103,43 @@ export const buildAcquisitionQuery = (platform?: string, userType?: string) => `
         tracking_code,
         COUNT(DISTINCT user_pseudo_id) as activeUsers,
         COUNT(DISTINCT CONCAT(user_pseudo_id, CAST(session_id AS STRING))) as sessions,
-        SUM(is_conversion) as conversions
+        SUM(is_signup) as signups
     FROM base_events
     GROUP BY sessionSource, sessionMedium, sessionCampaign, tracking_code
+    ORDER BY activeUsers DESC
+`;
+
+/**
+ * 핵심 서비스 활성화 지표 (Acquisition Activation - Donut Chart용)
+ * 첫 방문(First Open)한 유저 중 특정 액션을 수행한 유저 비율
+ */
+export const buildAcquisitionActivationQuery = (platform?: string, userType?: string) => `
+    WITH new_users AS (
+        SELECT DISTINCT user_pseudo_id
+        FROM \`${getGa4Table()}\`
+        WHERE event_name = 'first_open'
+          AND ${getDateRangeClause()}
+          AND ${getPlatformClause(platform)}
+          AND ${getUserTypeClause(userType)}
+    ),
+    user_actions AS (
+        SELECT 
+            user_pseudo_id,
+            LOGICAL_OR(event_name = 'photographer_profile_view') as did_profile_view,
+            LOGICAL_OR(event_name = 'booking_intent') as did_booking_intent,
+            LOGICAL_OR(event_name = 'chat_message_sent') as did_message_sent -- 가상 이벤트명, 실제 확인 필요
+        FROM \`${getGa4Table()}\`
+        WHERE ${getDateRangeClause()}
+          AND event_name IN ('photographer_profile_view', 'booking_intent', 'chat_message_sent')
+        GROUP BY user_pseudo_id
+    )
+    SELECT 
+        COUNT(DISTINCT n.user_pseudo_id) as total_new_users,
+        COUNT(DISTINCT IF(a.did_profile_view, n.user_pseudo_id, NULL)) as act_profile_view,
+        COUNT(DISTINCT IF(a.did_booking_intent, n.user_pseudo_id, NULL)) as act_booking_intent,
+        COUNT(DISTINCT IF(a.did_message_sent, n.user_pseudo_id, NULL)) as act_message_sent
+    FROM new_users n
+    LEFT JOIN user_actions a ON n.user_pseudo_id = a.user_pseudo_id
 `;
 
 /**

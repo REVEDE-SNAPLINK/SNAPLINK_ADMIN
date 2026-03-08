@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { getAcquisitionData } from '@/api/analytics';
 import {
-    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend, LabelList
+    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend, LabelList,
+    AreaChart, Area
 } from 'recharts';
 
 const COLORS = ['#00A980', '#00C49F', '#FFBB28', '#FF8042'];
@@ -29,24 +30,60 @@ export default function AcquisitionDashboard() {
                 onFilterChange={handleFilterChange}
             />
 
+            {/* 1. 유입 규모 추이 (Line/Area Chart) */}
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mb-8">
+                <div className="mb-6">
+                    <h3 className="text-lg font-bold text-gray-800">유입 규모 추이</h3>
+                    <p className="text-sm text-gray-400 mt-1">앱 설치, 최초 실행 및 회원가입 발생 건수</p>
+                </div>
+                <div className="h-[350px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={data.trend}>
+                            <defs>
+                                <linearGradient id="colorInstall" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#94a3b8" stopOpacity={0.1} />
+                                    <stop offset="95%" stopColor="#94a3b8" stopOpacity={0} />
+                                </linearGradient>
+                                <linearGradient id="colorOpen" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.1} />
+                                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                                </linearGradient>
+                                <linearGradient id="colorSignup" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#00A980" stopOpacity={0.1} />
+                                    <stop offset="95%" stopColor="#00A980" stopOpacity={0} />
+                                </linearGradient>
+                            </defs>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                            <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#9ca3af', fontSize: 12 }} />
+                            <YAxis axisLine={false} tickLine={false} tick={{ fill: '#9ca3af', fontSize: 12 }} />
+                            <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} />
+                            <Legend verticalAlign="top" align="right" height={36} iconType="circle" />
+                            <Area type="monotone" dataKey="installs" stroke="#94a3b8" fillOpacity={1} fill="url(#colorInstall)" strokeWidth={2} name="앱 설치" />
+                            <Area type="monotone" dataKey="opens" stroke="#3b82f6" fillOpacity={1} fill="url(#colorOpen)" strokeWidth={2} name="최초 오픈" />
+                            <Area type="monotone" dataKey="signups" stroke="#00A980" fillOpacity={1} fill="url(#colorSignup)" strokeWidth={3} name="회원가입" />
+                        </AreaChart>
+                    </ResponsiveContainer>
+                </div>
+            </div>
+
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-                {/* Channel Efficiency Pie Chart */}
+                {/* 2. 핵심 서비스 활성화 지표 (Donut Chart) */}
                 <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                    <h3 className="text-lg font-bold mb-6 text-gray-800">채널별 유입 비중</h3>
+                    <h3 className="text-lg font-bold mb-2 text-gray-800">핵심 서비스 활성화 지표</h3>
+                    <p className="text-xs text-gray-400 mb-6">첫 방문자 중 의미 있는 행동 수행 유저 비중</p>
                     <div className="h-[300px]">
                         <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
                                 <Pie
-                                    data={data.channels}
+                                    data={data.activation}
                                     cx="50%"
                                     cy="50%"
-                                    innerRadius={60}
+                                    innerRadius={70}
                                     outerRadius={100}
-                                    fill="#8884d8"
-                                    paddingAngle={5}
+                                    paddingAngle={8}
                                     dataKey="value"
                                 >
-                                    {data.channels?.map((_: any, index: number) => (
+                                    {data.activation?.map((_: any, index: number) => (
                                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                     ))}
                                 </Pie>
@@ -57,18 +94,19 @@ export default function AcquisitionDashboard() {
                     </div>
                 </div>
 
-                {/* Channel Conversion Bar Chart */}
+                {/* 3. 상위 유입 채널별 성과 (Bar Chart) */}
                 <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                    <h3 className="text-lg font-bold mb-6 text-gray-800">채널별 가입 전환율</h3>
+                    <h3 className="text-lg font-bold mb-2 text-gray-800">상위 유입 채널별 성과</h3>
+                    <p className="text-xs text-gray-400 mb-6">유입 소스별 활성 유저 규모</p>
                     <div className="h-[300px]">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={data.channels} layout="vertical">
                                 <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#f0f0f0" />
                                 <XAxis type="number" hide />
-                                <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fill: '#4b5563', fontSize: 13 }} />
+                                <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fill: '#4b5563', fontSize: 13 }} width={80} />
                                 <Tooltip cursor={{ fill: 'transparent' }} />
-                                <Bar dataKey="conversionRate" fill="#00A980" radius={[0, 4, 4, 0]} barSize={20}>
-                                    <LabelList dataKey="conversionRate" position="right" fill="#4b5563" style={{ fontSize: '11px', fontWeight: 'bold' }} />
+                                <Bar dataKey="value" fill="#3b82f6" radius={[0, 4, 4, 0]} barSize={24}>
+                                    <LabelList dataKey="value" position="right" fill="#4b5563" style={{ fontSize: '11px', fontWeight: 'bold' }} />
                                 </Bar>
                             </BarChart>
                         </ResponsiveContainer>
@@ -76,11 +114,11 @@ export default function AcquisitionDashboard() {
                 </div>
             </div>
 
-            {/* Unique Link Performance Table */}
+            {/* 4. 고유 링크 성과 (Table) */}
             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                 <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-lg font-bold text-gray-800">고유 링크 유입 성과 (작가 / 블로거)</h3>
-                    <span className="text-xs font-medium px-2 py-1 bg-green-50 text-[#00A980] rounded">Source Parameter Tracking</span>
+                    <h3 className="text-lg font-bold text-gray-800">고유 링크 상세 성과 (블로그/작가/포스트)</h3>
+                    <span className="text-xs font-medium px-2 py-1 bg-green-50 text-[#00A980] rounded">DeepLink & UTM Tracking</span>
                 </div>
                 <div className="overflow-x-auto">
                     <table className="w-full text-left">
