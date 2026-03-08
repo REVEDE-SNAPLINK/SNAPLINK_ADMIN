@@ -105,14 +105,29 @@ export const mapAcquisitionData = (trendRows: any[], channelRows: any[], activat
         { name: '메시지 전송', value: Number(act.act_message_sent) || 0, rate: Math.round(((Number(act.act_message_sent) || 0) / totalNew) * 100) }
     ];
 
-    // 3. 채널 및 링크 성과 (Bar Chart & Table)
+    // 3. 채널 및 링크 성과 (카테고리 매핑 로직 추가)
+    const getChannelName = (source: string, medium: string) => {
+        const src = source.toLowerCase();
+        const med = medium.toLowerCase();
+
+        if (src.includes('instagram') || src.includes('facebook') || src || med.includes('social')) return '인스타그램 / SNS';
+        if (src.includes('naver') || src.includes('blog')) return '블로그 체험단';
+        if (src.includes('profile')) return '작가 프로필 링크';
+        if (src.includes('post') || src.includes('community')) return '게시물별 고유 링크';
+        if (src.includes('play') || src.includes('store') || src.includes('apple')) return '스토어 (Play/App)';
+        if (src === '(direct)' || src.includes('landing')) return '랜딩 페이지 / 직접 유입';
+        return '기타 유입';
+    };
+
     const channels = channelRows.map(row => {
         const sess = Number(row.sessions) || 0;
         const conv = Number(row.signups) || 0;
         const rate = sess > 0 ? (conv / sess) * 100 : 0;
+        const channelName = getChannelName(row.sessionSource, row.sessionMedium);
+
         return {
-            name: `${row.sessionSource} / ${row.sessionMedium}`,
-            source: row.sessionSource,
+            name: channelName,
+            rawSource: row.sessionSource,
             campaign: row.sessionCampaign || '',
             trackingCode: row.tracking_code || '',
             value: Number(row.activeUsers) || 0,
@@ -121,32 +136,36 @@ export const mapAcquisitionData = (trendRows: any[], channelRows: any[], activat
         };
     });
 
-    const sourceStats = channels.reduce((acc, curr) => {
-        const key = curr.source;
-        acc[key] = (acc[key] || 0) + curr.value;
+    // 카테고리별 합산
+    const categoryStats = channels.reduce((acc, curr) => {
+        const key = curr.name;
+        if (!acc[key]) {
+            acc[key] = { name: key, value: 0, totalRate: 0, count: 0 };
+        }
+        acc[key].value += curr.value;
+        acc[key].totalRate += curr.conversionRate;
+        acc[key].count += 1;
         return acc;
-    }, {} as Record<string, number>);
+    }, {} as Record<string, any>);
 
     return {
         trend,
         activation,
-        channels: Object.entries(sourceStats).map(([name, value]) => {
-            const channelData = channels.find(c => c.source === name);
-            return {
-                name,
-                value,
-                conversionRate: channelData?.conversionRate || 0
-            };
-        }).sort((a, b) => b.value - a.value).slice(0, 5),
+        channels: Object.values(categoryStats).map(c => ({
+            name: c.name,
+            value: c.value,
+            conversionRate: Number((c.totalRate / c.count).toFixed(1))
+        })).sort((a, b) => b.value - a.value),
         links: channels
             .filter(c => c.trackingCode !== '' || (c.campaign !== '(not set)' && c.campaign !== ''))
             .map(c => ({
                 name: c.trackingCode || c.campaign,
+                source: c.rawSource,
                 users: c.value,
                 conversionRate: c.conversionRate,
-                status: c.conversionRate > 10 ? 'Excellent' : c.conversionRate > 5 ? 'Good' : 'Average'
+                status: c.conversionRate > 10 ? '우수' : c.conversionRate > 5 ? '보통' : '낮음'
             }))
-            .slice(0, 10)
+            .slice(0, 15)
     };
 };
 
