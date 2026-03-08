@@ -30,9 +30,24 @@ export default function CreatorDashboard() {
 
             {/* Metric Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <MetricCard title="활동 작가 수" value={data.metrics.activeCreators} change="15%" isPositive={true} />
-                <MetricCard title="문의 응답률" value={data.metrics.responseRate} change="2%" isPositive={true} />
-                <MetricCard title="응답 시간 중앙값" value={data.metrics.medianResponseTime} change="5m" isPositive={false} />
+                <MetricCard
+                    title="활동 작가 수"
+                    value={data.metrics.activeCreators}
+                    change={data.metrics.activeCreatorsChange}
+                    isPositive={data.metrics.activeCreatorsChange > 0}
+                />
+                <MetricCard
+                    title="문의 응답률"
+                    value={data.metrics.responseRate}
+                    change={data.metrics.responseRateChange}
+                    isPositive={data.metrics.responseRateChange > 0}
+                />
+                <MetricCard
+                    title="응답 시간 중앙값"
+                    value={data.metrics.medianResponseTime}
+                    change={data.metrics.medianResponseTimeChange}
+                    isPositive={false}
+                />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">

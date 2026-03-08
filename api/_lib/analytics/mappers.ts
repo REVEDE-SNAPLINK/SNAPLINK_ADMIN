@@ -195,17 +195,32 @@ export const mapCreatorData = (rows: any[]) => {
     const within3Hours = Number(rows?.[0]?.within3Hours) || 0;
     const over3Hours = Number(rows?.[0]?.over3Hours) || 0;
 
+    // 전체 응답 수 (상세 지표 합산)
+    const totalResponses = within1Hour + within3Hours + over3Hours;
+
+    // 비율 계산 (0으로 나누기 방지)
+    const getRate = (val: number) => totalResponses > 0 ? Math.round((val / totalResponses) * 100) : 0;
+
     return {
         metrics: {
             activeCreators,
-            responseRate: "N/A", // 문의 생성 대비 대답 비율 산정은 추후 BQ Join 필요
-            medianResponseTime: avgResponseTimeSec > 0 ? formatDuration(avgResponseTimeSec) : "N/A"
+            activeCreatorsChange: 0,
+            responseRate: "N/A",
+            responseRateChange: 0,
+            medianResponseTime: avgResponseTimeSec > 0 ? formatDuration(avgResponseTimeSec) : "N/A",
+            medianResponseTimeChange: 0
         },
-        quality: [], // DB 조인 성격이 강해 배제함
+        quality: [
+            { name: '대응 속도', score: getRate(within1Hour + within3Hours) },
+            { name: '전문성', score: 0 },
+            { name: '친절도', score: 0 },
+            { name: '예약 전환', score: 0 },
+            { name: '리뷰 평점', score: 0 }
+        ],
         responseDetails: {
-            within1Hour,
-            within3Hours,
-            over3Hours
+            within1Hour: getRate(within1Hour),
+            within3Hours: getRate(within3Hours),
+            over3Hours: getRate(over3Hours)
         }
     };
 };
