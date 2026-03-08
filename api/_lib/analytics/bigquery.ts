@@ -2,10 +2,23 @@ import { BigQuery, type Query } from '@google-cloud/bigquery';
 import path from 'path';
 
 // BQ 클라이언트 초기화
-export const bigquery = new BigQuery({
+const bqConfig: any = {
     projectId: process.env.BIGQUERY_PROJECT_ID,
-    keyFilename: path.resolve(process.cwd(), process.env.BIGQUERY_KEY_FILENAME || 'snaplink-bq-key.json') // 절대경로 처리
-});
+};
+
+// Vercel 등 환경변수 기반 인증 지원 (JSON 문자열)
+if (process.env.BIGQUERY_CREDENTIALS) {
+    try {
+        bqConfig.credentials = JSON.parse(process.env.BIGQUERY_CREDENTIALS);
+    } catch (e) {
+        console.error('Failed to parse BIGQUERY_CREDENTIALS env var', e);
+    }
+} else {
+    // 로컬 개발 환경용 파일 참조
+    bqConfig.keyFilename = path.resolve(process.cwd(), process.env.BIGQUERY_KEY_FILENAME || 'snaplink-bq-key.json');
+}
+
+export const bigquery = new BigQuery(bqConfig);
 
 // 데이터셋 이름도 환경변수로 주입받을 수 있도록 처리
 export const GA4_DATASET = process.env.BIGQUERY_GA4_DATASET || 'analytics_xxxxxxxxx'; // Fallback
