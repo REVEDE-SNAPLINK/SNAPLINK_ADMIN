@@ -60,22 +60,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
         if (type === 'general') {
             const [dailyRows, fixedAuthRows, funnelRows, minDateRow] = await Promise.all([
                 runQuery(buildGeneralDailyQuery(platform, userType), params).catch((e) => {
-                    console.error('[BQ General Query Error]', e);
+                    console.error('[BQ Error - GeneralDaily]', e.message || e);
                     return [];
                 }),
                 runQuery(buildGeneralFixedActiveUsersQuery(platform, userType), params).catch((e) => {
-                    console.error('[BQ FixedActiveUsers Error]', e);
+                    console.error('[BQ Error - FixedActiveUsers]', e.message || e);
                     return [];
                 }),
                 runQuery(buildEventFunnelQuery([
                     'home_feed_view', 'portfolio_post_view', 'creator_card_impression',
                     'photographer_profile_view', 'inquiry_start'
                 ], platform, userType), params).catch((e) => {
-                    console.error('[BQ General Funnel Error]', e);
+                    console.error('[BQ Error - GeneralFunnel]', e.message || e);
                     return [];
                 }),
                 // 가장 오래된 날짜 탐색
-                runQuery(`SELECT MIN(FORMAT_DATE('%Y%m%d', PARSE_DATE('%Y%m%d', _TABLE_SUFFIX))) as firstDate FROM \`${process.env.BIGQUERY_PROJECT_ID || ''}.${process.env.BIGQUERY_GA4_DATASET || 'analytics_xxxxxxxx'}.events_*\``).catch(() => [])
+                runQuery(`SELECT MIN(FORMAT_DATE('%Y%m%d', PARSE_DATE('%Y%m%d', _TABLE_SUFFIX))) as firstDate FROM \`${process.env.BIGQUERY_PROJECT_ID || ''}.${process.env.BIGQUERY_GA4_DATASET || 'analytics_xxxxxxxx'}.events_*\``).catch((e) => {
+                    console.error('[BQ Error - MinDateQuery]', e.message || e);
+                    return [];
+                })
             ]);
 
             const responseData = mapGeneralKPI(dailyRows, fixedAuthRows, funnelRows, minDateRow);
@@ -88,7 +91,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
         ===================================================== */
         if (type === 'acquisition') {
             const rows = await runQuery(buildAcquisitionQuery(platform, userType), params).catch((e) => {
-                console.error('[BQ Acquisition Query Error]', e);
+                console.error('[BQ Error - Acquisition]', e.message || e);
                 return [];
             });
             const responseData = mapAcquisitionData(rows);
@@ -106,7 +109,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
                 'booking_intent', 'booking_request_submitted', 'booking_accepted_by_photographer', 'booking_confirmed', 'booking_cancelled_by_user'
             ];
             const rows = await runQuery(buildEventFunnelQuery(funnelEvents, platform, userType), params).catch((e) => {
-                console.error('[BQ Funnel Query Error]', e);
+                console.error('[BQ Error - Funnel]', e.message || e);
                 return [];
             });
             const responseData = mapFunnelData(rows);
@@ -119,7 +122,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
         ===================================================== */
         if (type === 'creator') {
             const rows = await runQuery(buildCreatorQuery(platform), params).catch((e) => {
-                console.error('[BQ Creator Query Error]', e);
+                console.error('[BQ Error - Creator]', e.message || e);
                 return [];
             });
             const responseData = mapCreatorData(rows);

@@ -6,33 +6,43 @@ const bqConfig: any = {
     projectId: process.env.BIGQUERY_PROJECT_ID,
 };
 
+if (!process.env.BIGQUERY_PROJECT_ID) {
+    console.warn('WARNING: BIGQUERY_PROJECT_ID is not set.');
+}
+
 // Vercel 등 환경변수 기반 인증 지원 (JSON 문자열)
 if (process.env.BIGQUERY_CREDENTIALS) {
     try {
         bqConfig.credentials = JSON.parse(process.env.BIGQUERY_CREDENTIALS);
+        console.log('BigQuery client initialized using BIGQUERY_CREDENTIALS env var.');
     } catch (e) {
-        console.error('Failed to parse BIGQUERY_CREDENTIALS env var', e);
+        console.error('ERROR: Failed to parse BIGQUERY_CREDENTIALS env var. Check if it is a valid JSON string.', e);
     }
 } else {
     // 로컬 개발 환경용 파일 참조
-    bqConfig.keyFilename = path.resolve(process.cwd(), process.env.BIGQUERY_KEY_FILENAME || 'snaplink-bq-key.json');
+    const keyPath = path.resolve(process.cwd(), process.env.BIGQUERY_KEY_FILENAME || 'snaplink-bq-key.json');
+    bqConfig.keyFilename = keyPath;
+    console.log(`BigQuery client will attempt to use key file: ${keyPath}`);
 }
 
 export const bigquery = new BigQuery(bqConfig);
 
 // 데이터셋 이름도 환경변수로 주입받을 수 있도록 처리
-export const GA4_DATASET = process.env.BIGQUERY_GA4_DATASET || 'analytics_xxxxxxxxx'; // Fallback
+export const GA4_DATASET = process.env.BIGQUERY_GA4_DATASET;
+if (!GA4_DATASET) {
+    console.warn('WARNING: BIGQUERY_GA4_DATASET is not set. Queries will likely fail.');
+}
 export const CRASHLYTICS_DATASET = process.env.BIGQUERY_CRASHLYTICS_DATASET || 'firebase_crashlytics';
 
 export const getGa4Table = (): string => {
-    // BIGQUERY_GA4_DATASET이 project.dataset 형태라면 템플릿 사용
-    if (GA4_DATASET.includes('.')) {
-        return `${GA4_DATASET}.events_*`;
+    const dataset = GA4_DATASET || 'analytics_xxxxxxxx'; // Fallback for type safety
+    if (dataset.includes('.')) {
+        return `${dataset}.events_*`;
     }
     if (process.env.BIGQUERY_PROJECT_ID) {
-        return `${process.env.BIGQUERY_PROJECT_ID}.${GA4_DATASET}.events_*`;
+        return `${process.env.BIGQUERY_PROJECT_ID}.${dataset}.events_*`;
     }
-    return `${GA4_DATASET}.events_*`;
+    return `${dataset}.events_*`;
 };
 
 export const getCrashlyticsTable = (): string => {
