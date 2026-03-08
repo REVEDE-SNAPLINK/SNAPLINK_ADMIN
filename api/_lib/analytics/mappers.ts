@@ -1,5 +1,5 @@
-import type { AnalyticsData, EventCountRow } from './types';
-import { formatDateYYMMDD, formatDuration } from './bigquery';
+import type { AnalyticsData, EventCountRow } from './types.js';
+import { formatDateYYMMDD, formatDuration } from './bigquery.js';
 
 /**
  * 일반(General) 보고서 매퍼

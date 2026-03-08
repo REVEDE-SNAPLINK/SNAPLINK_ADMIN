@@ -1,19 +1,19 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { format, subDays } from 'date-fns';
-import { runQuery } from './_lib/analytics/bigquery';
+import { runQuery } from './_lib/analytics/bigquery.js';
 import {
     buildGeneralDailyQuery,
     buildGeneralFixedActiveUsersQuery,
     buildAcquisitionQuery,
     buildEventFunnelQuery,
     buildCreatorQuery
-} from './_lib/analytics/queries';
+} from './_lib/analytics/queries.js';
 import {
     mapGeneralKPI,
     mapAcquisitionData,
     mapFunnelData,
     mapCreatorData
-} from './_lib/analytics/mappers';
+} from './_lib/analytics/mappers.js';
 
 /**
  * 쿼리 파라미터 기반으로 BigQuery에 전달할 날짜(YYYY-MM-DD)를 계산합니다.

@@ -6,7 +6,7 @@ import {
     getTargetUserId,
     getPlatformClause,
     getUserTypeClause
-} from './bigquery';
+} from './bigquery.js';
 
 /**
  * 활성 사용자(DAU 등) 관련 쿼리
