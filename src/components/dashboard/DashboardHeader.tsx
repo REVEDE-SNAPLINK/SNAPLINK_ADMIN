@@ -59,7 +59,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ title, filters
                     onChange={(e) => onFilterChange({ userType: e.target.value })}
                 >
                     <option value="all">모든 사용자</option>
-                    <option value="client">고객</option>
+                    <option value="user">고객</option>
                     <option value="photographer">작가</option>
                 </select>
 
