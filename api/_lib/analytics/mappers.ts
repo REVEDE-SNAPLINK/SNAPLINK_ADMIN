@@ -105,17 +105,27 @@ export const mapAcquisitionData = (trendRows: any[], channelRows: any[], activat
         { name: '메시지 전송', value: Number(act.act_message_sent) || 0, rate: Math.round(((Number(act.act_message_sent) || 0) / totalNew) * 100) }
     ];
 
-    // 3. 채널 및 링크 성과 (카테고리 매핑 로직 추가)
-    const getChannelName = (source: string, medium: string) => {
+    // 3. 채널 및 링크 성과 (카테고리 매핑 로직 추가 - 스토어 분리)
+    const getChannelName = (source: string, medium: string, platform?: string) => {
         const src = source.toLowerCase();
         const med = medium.toLowerCase();
+        const plt = (platform || '').toUpperCase();
 
-        if (src.includes('instagram') || src.includes('facebook') || src || med.includes('social')) return '인스타그램 / SNS';
+        // 1순위: 명시적 소셜 확인
+        if (src.includes('instagram') || src.includes('facebook') || med.includes('social')) return '인스타그램 / SNS';
         if (src.includes('naver') || src.includes('blog')) return '블로그 체험단';
+
+        // 2순위: (direct) 혹은 스토어 관련 유입을 플랫폼별로 세분화
+        if (src === '(direct)' || src.includes('play') || src.includes('store') || src.includes('apple') || src.includes('google')) {
+            if (plt === 'IOS') return 'App Store (iOS 검색/설치)';
+            if (plt === 'ANDROID') return 'Play Store (Android 검색/설치)';
+            return '스토어 유입';
+        }
+
         if (src.includes('profile')) return '작가 프로필 링크';
         if (src.includes('post') || src.includes('community')) return '게시물별 고유 링크';
-        if (src.includes('play') || src.includes('store') || src.includes('apple')) return '스토어 (Play/App)';
-        if (src === '(direct)' || src.includes('landing')) return '랜딩 페이지 / 직접 유입';
+        if (src.includes('landing')) return '랜딩 페이지 유입';
+
         return '기타 유입';
     };
 
@@ -123,7 +133,7 @@ export const mapAcquisitionData = (trendRows: any[], channelRows: any[], activat
         const sess = Number(row.sessions) || 0;
         const conv = Number(row.signups) || 0;
         const rate = sess > 0 ? (conv / sess) * 100 : 0;
-        const channelName = getChannelName(row.sessionSource, row.sessionMedium);
+        const channelName = getChannelName(row.sessionSource, row.sessionMedium, row.platform);
 
         return {
             name: channelName,
@@ -157,14 +167,18 @@ export const mapAcquisitionData = (trendRows: any[], channelRows: any[], activat
             conversionRate: Number((c.totalRate / c.count).toFixed(1))
         })).sort((a, b) => b.value - a.value),
         links: channels
-            .filter(c => c.trackingCode !== '' || (c.campaign !== '(not set)' && c.campaign !== ''))
+            .filter(c =>
+                (c.trackingCode !== '' && c.trackingCode !== '(direct)' && c.trackingCode !== '(not set)') ||
+                (c.campaign !== '(not set)' && c.campaign !== '' && c.campaign !== '(direct)')
+            )
             .map(c => ({
                 name: c.trackingCode || c.campaign,
-                source: c.rawSource,
+                source: c.rawSource === '(direct)' ? '직접 유입 / 스토어 검색' : c.rawSource,
                 users: c.value,
                 conversionRate: c.conversionRate,
                 status: c.conversionRate > 10 ? '우수' : c.conversionRate > 5 ? '보통' : '낮음'
             }))
+            .sort((a, b) => b.users - a.users)
             .slice(0, 15)
     };
 };
