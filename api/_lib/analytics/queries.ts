@@ -78,9 +78,6 @@ export const buildAcquisitionTrendQuery = (platform?: string, userType?: string)
     ORDER BY event_date ASC
 `;
 
-/**
- * 획득 채널 및 고유 링크 상세 (Acquisition Channels - Bar Chart & Table용)
- */
 export const buildAcquisitionChannelsQuery = (platform?: string, userType?: string) => `
     WITH base_events AS (
         SELECT 
@@ -88,6 +85,7 @@ export const buildAcquisitionChannelsQuery = (platform?: string, userType?: stri
             COALESCE(${getEventParamString('medium')}, traffic_source.medium, '(none)') as sessionMedium,
             COALESCE(${getEventParamString('campaign')}, traffic_source.name, '(not set)') as sessionCampaign,
             COALESCE(${getEventParamString('tracking_code')}, '') as tracking_code,
+            platform,
             user_pseudo_id,
             ${getEventParamInt('ga_session_id')} as session_id,
             IF(event_name = 'sign_up', 1, 0) as is_signup
@@ -101,11 +99,12 @@ export const buildAcquisitionChannelsQuery = (platform?: string, userType?: stri
         sessionMedium,
         sessionCampaign,
         tracking_code,
+        platform,
         COUNT(DISTINCT user_pseudo_id) as activeUsers,
         COUNT(DISTINCT CONCAT(user_pseudo_id, CAST(session_id AS STRING))) as sessions,
         SUM(is_signup) as signups
     FROM base_events
-    GROUP BY sessionSource, sessionMedium, sessionCampaign, tracking_code
+    GROUP BY sessionSource, sessionMedium, sessionCampaign, tracking_code, platform
     ORDER BY activeUsers DESC
 `;
 
