@@ -49,7 +49,7 @@ export const mapGeneralKPI = (
 
     // 4. 평균 요약
     const avgSessionsPerUser = charts.length > 0
-        ? charts.reduce((acc, c) => acc + (c.sessions / (c.dau || 1)), 0) / charts.length
+        ? charts.reduce((acc, c) => acc + (c.dau > 0 ? (c.sessions / c.dau) : 0), 0) / charts.length
         : 0;
 
     const avgDurationPerDay = charts.length > 0
