@@ -1,15 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import PageLayout from '@/layouts/PageLayout';
-import { Table, Column } from '@/components/common/Table';
+import { Table, type Column } from '@/components/common/Table';
 import { 
   Plus, Copy, ExternalLink, Edit2, Trash2, MoreVertical, 
-  CheckCircle2, XCircle, Search, Filter, Info, Link as LinkIcon
+  CheckCircle2, XCircle, Link as LinkIcon
 } from 'lucide-react';
 import { 
   listLinks, createLink, updateLink, deactivateLink, 
-  LinkEntry, CreateLinkRequest, UpdateLinkRequest,
-  TargetType, LinkChannel, OwnerType
-} from '@/api/linkHub';
+  type LinkEntry, type CreateLinkRequest, type UpdateLinkRequest} from '@/api/linkHub';
 
 // --- Components ---
 
@@ -47,7 +45,6 @@ const CopyButton = ({ text, label }: { text: string, label?: string }) => {
 
 export default function LinksPage() {
   const [links, setLinks] = useState<LinkEntry[]>([]);
-  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
@@ -70,9 +67,8 @@ export default function LinksPage() {
     setLoading(true);
     setError(null);
     try {
-      const data = await listLinks(filters as any);
+      const data = await listLinks(filters);
       setLinks(data.items);
-      setTotal(data.total);
     } catch (err) {
       console.error('Failed to fetch links:', err);
       setError('링크 목록을 불러오는데 실패했습니다.');
@@ -90,7 +86,7 @@ export default function LinksPage() {
     try {
       await deactivateLink(code);
       fetchLinks();
-    } catch (err) {
+    } catch {
       alert('링크 비활성화에 실패했습니다.');
     }
   };
@@ -360,7 +356,7 @@ export default function LinksPage() {
                                 fetchLinks();
                                 setIsCreateModalOpen(false);
                                 setIsEditModalOpen(false);
-                            } catch (err) {
+                            } catch {
                                 alert('실패했습니다. 입력값을 확인해주세요.');
                             }
                         }}
@@ -389,17 +385,21 @@ export default function LinksPage() {
 
 // --- Form Sub-component ---
 
+import { type TargetType, type LinkChannel, type OwnerType } from '@/api/linkHub';
+
+type LinkFormData = Omit<LinkEntry, 'code' | 'shareUrl' | 'trackingCode' | 'createdAt'>;
+
 function LinkForm({ 
     initialData, 
     onSubmit, 
     onCancel 
 }: { 
     initialData?: LinkEntry | null, 
-    onSubmit: (data: any) => void, 
+    onSubmit: (data: LinkFormData) => void, 
     onCancel: () => void 
 }) {
     const isEdit = !!initialData;
-    const [formData, setFormData] = useState<any>(initialData || {
+    const [formData, setFormData] = useState<LinkFormData>(initialData || {
         targetType: 'photographer_profile',
         targetId: '',
         path: '',
@@ -451,7 +451,7 @@ function LinkForm({
                             className="w-full border border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-[#00A980] bg-white disabled:bg-gray-100"
                             disabled={isEdit}
                             value={formData.targetType}
-                            onChange={e => setFormData({ ...formData, targetType: e.target.value, targetId: '', path: '' })}
+                            onChange={e => setFormData({ ...formData, targetType: e.target.value as TargetType, targetId: '', path: '' })}
                         >
                             <option value="photographer_profile">작가 프로필</option>
                             <option value="portfolio_post">포트폴리오</option>
@@ -490,7 +490,7 @@ function LinkForm({
                         className="w-full border border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-[#00A980] bg-white disabled:bg-gray-100"
                         disabled={isEdit}
                         value={formData.channel}
-                        onChange={e => setFormData({ ...formData, channel: e.target.value })}
+                        onChange={e => setFormData({ ...formData, channel: e.target.value as LinkChannel })}
                     >
                         <option value="blogger">블로거</option>
                         <option value="instagram_ads">인스타 광고</option>
@@ -505,7 +505,7 @@ function LinkForm({
                         className="w-full border border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-[#00A980] bg-white disabled:bg-gray-100"
                         disabled={isEdit}
                         value={formData.ownerType}
-                        onChange={e => setFormData({ ...formData, ownerType: e.target.value })}
+                        onChange={e => setFormData({ ...formData, ownerType: e.target.value as OwnerType })}
                     >
                         <option value="system">시스템</option>
                         <option value="marketer">마케터</option>
