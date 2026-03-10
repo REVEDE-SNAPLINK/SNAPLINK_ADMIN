@@ -13,6 +13,7 @@ import GeneralDashboard from '@/pages/dashboard/General';
 import AcquisitionDashboard from '@/pages/dashboard/Acquisition';
 import FunnelDashboard from '@/pages/dashboard/Funnel';
 import CreatorDashboard from '@/pages/dashboard/Creator';
+import LinksPage from '@/pages/marketing/Links';
 
 import GroupShooting from '@/pages/shootings/Group';
 import RegisterShooting from '@/pages/shootings/Register';
@@ -97,6 +98,7 @@ function App() {
           <Route path="/marketing/ads" element={<Placeholder title="광고현황" />} />
           <Route path="/marketing/events" element={<Placeholder title="이벤트 관리" />} />
           <Route path="/marketing/promotions" element={<Placeholder title="프로모션" />} />
+          <Route path="/marketing/links" element={<LinksPage />} />
 
           {/* 데이터분석 */}
           <Route path="/analytics/dashboard" element={<Placeholder title="분석 대시보드" />} />

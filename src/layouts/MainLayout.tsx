@@ -57,6 +57,7 @@ const NAV_ITEMS = [
             { label: '광고현황', path: '/marketing/ads' },
             { label: '이벤트 관리', path: '/marketing/events' },
             { label: '프로모션', path: '/marketing/promotions' },
+            { label: '링크 관리', path: '/marketing/links' },
         ]
     },
     {
