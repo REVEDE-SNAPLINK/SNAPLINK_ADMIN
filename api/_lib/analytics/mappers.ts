@@ -8,7 +8,8 @@ export const mapGeneralKPI = (
     dailyRows: any[],
     fixedAuthRows: any[],
     funnelRows: EventCountRow[],
-    minDateRow: any[]
+    minDateRow: any[],
+    crashFreeRows: any[] = []
 ): AnalyticsData => {
     // 1. Charts 데이터 세팅
     const charts = dailyRows.map(row => ({
@@ -56,6 +57,12 @@ export const mapGeneralKPI = (
         ? charts.reduce((acc, c) => acc + c.sessionDuration, 0) / charts.length
         : 0;
 
+    // 5. 앱 안정성 (Crash-Free Users) 처리
+    const cfData = crashFreeRows?.[0];
+    const crashFreeUsers = cfData?.crash_free_percentage !== undefined 
+        ? `${cfData.crash_free_percentage}%` 
+        : 'N/A';
+
     return {
         metadata: {
             firstDataDate: minDateRow?.[0]?.firstDate ? formatDateYYMMDD(minDateRow[0].firstDate) : '2024-01-01',
@@ -75,7 +82,7 @@ export const mapGeneralKPI = (
             avgSessionDuration: formatDuration(avgDurationPerDay),
             avgUserEngagement: formatDuration(avgDurationPerDay),
             sessionsPerUser: Number(avgSessionsPerUser.toFixed(2)),
-            crashFreeUsers: 'N/A', // Crashlytics Export 필요
+            crashFreeUsers,
             retention: { d1: 0, d7: 0, d30: 0 } // 리텐션 전용 계산 테이블에서 추출 필요
         },
         charts,

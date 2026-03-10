@@ -8,7 +8,8 @@ import {
     buildAcquisitionChannelsQuery,
     buildAcquisitionActivationQuery,
     buildEventFunnelQuery,
-    buildCreatorQuery
+    buildCreatorQuery,
+    buildCrashFreeUsersQuery
 } from './_lib/analytics/queries.js';
 import {
     mapGeneralKPI,
@@ -60,7 +61,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
            GENERAL
         ===================================================== */
         if (type === 'general') {
-            const [dailyRows, fixedAuthRows, funnelRows, minDateRow] = await Promise.all([
+            const [dailyRows, fixedAuthRows, funnelRows, minDateRow, crashFreeRows] = await Promise.all([
                 runQuery(buildGeneralDailyQuery(platform, userType), params).catch((e) => {
                     console.error('[BQ Error - GeneralDaily]', e.message || e);
                     return [];
@@ -76,14 +77,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
                     console.error('[BQ Error - GeneralFunnel]', e.message || e);
                     return [];
                 }),
-                // 가장 오래된 날짜 탐색
                 runQuery(`SELECT MIN(FORMAT_DATE('%Y%m%d', PARSE_DATE('%Y%m%d', _TABLE_SUFFIX))) as firstDate FROM \`${process.env.BIGQUERY_PROJECT_ID || ''}.${process.env.BIGQUERY_GA4_DATASET || 'analytics_xxxxxxxx'}.events_*\``).catch((e) => {
                     console.error('[BQ Error - MinDateQuery]', e.message || e);
+                    return [];
+                }),
+                runQuery(buildCrashFreeUsersQuery(platform), params).catch((e) => {
+                    console.error('[BQ Error - CrashFreeUsers]', e.message || e);
                     return [];
                 })
             ]);
 
-            const responseData = mapGeneralKPI(dailyRows, fixedAuthRows, funnelRows, minDateRow);
+            const responseData = mapGeneralKPI(dailyRows, fixedAuthRows, funnelRows, minDateRow, crashFreeRows);
             res.status(200).json(responseData);
             return;
         }

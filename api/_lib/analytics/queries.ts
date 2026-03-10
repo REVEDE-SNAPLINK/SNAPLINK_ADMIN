@@ -1,5 +1,6 @@
 import {
     getGa4Table,
+    getCrashlyticsTable,
     getDateRangeClause,
     getEventParamInt,
     getEventParamString,
@@ -191,4 +192,30 @@ export const buildCreatorQuery = (platform?: string) => `
         -- 3시간 초과
         COUNT(CASE WHEN event_name = 'photographer_first_response_time' AND response_time_seconds > 10800 THEN 1 END) as over3Hours
     FROM creator_events
+`;
+
+/**
+ * 앱 안정성(Crash-Free Users) 쿼리
+ * 전체 활성 사용자 수 대비 Crashlytics 에러(Fatal) 이벤트가 발생하지 않은 유저의 비율 설정
+ */
+export const buildCrashFreeUsersQuery = (platform?: string) => `
+    WITH total_users AS (
+        SELECT COUNT(DISTINCT user_pseudo_id) as total_count
+        FROM \`${getGa4Table()}\`
+        WHERE ${getDateRangeClause()}
+          AND ${getPlatformClause(platform)}
+    ),
+    crashed_users AS (
+        SELECT COUNT(DISTINCT user_pseudo_id) as crashed_count
+        FROM \`${getCrashlyticsTable()}\`
+        WHERE DATE(event_timestamp) BETWEEN CAST(@startDate AS DATE) AND CAST(@endDate AS DATE)
+          AND is_fatal = true
+          -- 플랫폼 필터링 로직이 필요한 경우 (Crashlytics 스키마 기준 'application.display_version' 등 확인 필요)
+    )
+    SELECT
+        t.total_count,
+        c.crashed_count,
+        IFNULL(ROUND((1 - (c.crashed_count / NULLIF(t.total_count, 0))) * 100, 2), 100) as crash_free_percentage
+    FROM total_users t
+    CROSS JOIN crashed_users c
 `;
