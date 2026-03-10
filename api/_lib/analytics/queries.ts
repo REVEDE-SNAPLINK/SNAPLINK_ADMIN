@@ -47,14 +47,14 @@ export const buildGeneralFixedActiveUsersQuery = (platform?: string, userType?: 
             ${getTargetUserId()} as final_user_id
         FROM \`${getGa4Table()}\`
         WHERE _TABLE_SUFFIX BETWEEN FORMAT_DATE('%Y%m%d', DATE_SUB(CAST(@endDate AS DATE), INTERVAL 30 DAY)) 
-                                AND FORMAT_DATE('%Y%m%d', CAST(@endDate AS DATE))
+                                AND FORMAT_DATE('%Y%m%d', DATE_SUB(CAST(@endDate AS DATE), INTERVAL 1 DAY))
           AND ${getPlatformClause(platform)}
           AND ${getUserTypeClause(userType)}
     )
     SELECT
-        (SELECT COUNT(DISTINCT final_user_id) FROM active_users WHERE event_date = FORMAT_DATE('%Y%m%d', CAST(@endDate AS DATE))) as DAU_today,
-        (SELECT COUNT(DISTINCT final_user_id) FROM active_users WHERE event_date >= FORMAT_DATE('%Y%m%d', DATE_SUB(CAST(@endDate AS DATE), INTERVAL 6 DAY))) as WAU,
-        (SELECT COUNT(DISTINCT final_user_id) FROM active_users WHERE event_date >= FORMAT_DATE('%Y%m%d', DATE_SUB(CAST(@endDate AS DATE), INTERVAL 29 DAY))) as MAU
+        (SELECT COUNT(DISTINCT final_user_id) FROM active_users WHERE event_date = FORMAT_DATE('%Y%m%d', DATE_SUB(CAST(@endDate AS DATE), INTERVAL 1 DAY))) as DAU,
+        (SELECT COUNT(DISTINCT final_user_id) FROM active_users WHERE event_date >= FORMAT_DATE('%Y%m%d', DATE_SUB(CAST(@endDate AS DATE), INTERVAL 7 DAY))) as WAU,
+        (SELECT COUNT(DISTINCT final_user_id) FROM active_users WHERE event_date >= FORMAT_DATE('%Y%m%d', DATE_SUB(CAST(@endDate AS DATE), INTERVAL 30 DAY))) as MAU
 `;
 
 /**

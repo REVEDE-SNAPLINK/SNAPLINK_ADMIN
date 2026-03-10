@@ -20,8 +20,8 @@ export const mapGeneralKPI = (
     })).sort((a, b) => a.rawDate.localeCompare(b.rawDate));
 
     // 2. Fixed Metric
-    const fixedInfo = fixedAuthRows?.[0] || { DAU_today: 0, WAU: 0, MAU: 0 };
-    const fixedDAU = Number(fixedInfo.DAU_today) || 0;
+    const fixedInfo = fixedAuthRows?.[0] || { DAU: 0, WAU: 0, MAU: 0 };
+    const fixedDAU = Number(fixedInfo.DAU) || 0;
     const fixedWAU = Number(fixedInfo.WAU) || 0;
     const fixedMAU = Number(fixedInfo.MAU) || 0;
 
@@ -63,7 +63,7 @@ export const mapGeneralKPI = (
         },
         metrics: {
             DAU: fixedDAU,
-            dauPeriod: '(오늘)',
+            dauPeriod: '(어제)',
             dauChange: 0,
             WAU: fixedWAU,
             wauPeriod: '(최근 7일)',
