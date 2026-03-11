@@ -1,15 +1,76 @@
 import type { AnalyticsData, EventCountRow } from './types.js';
 import { formatDateYYMMDD, formatDuration } from './bigquery.js';
 
+interface DailyRow {
+    rawDate: string;
+    dau: number | string;
+    sessions: number | string;
+    sessionDuration: number | string;
+}
+
+interface FixedAuthRow {
+    DAU: number | string;
+    WAU: number | string;
+    MAU: number | string;
+}
+
+interface MinDateRow {
+    firstDate: string;
+}
+
+interface CrashFreeRow {
+    crash_free_percentage?: number | string;
+}
+
+interface TrendRow {
+    rawDate: string;
+    installs: number | string;
+    first_opens: number | string;
+    sign_ups: number | string;
+}
+
+interface ChannelRow {
+    sessions: number | string;
+    signups: number | string;
+    sessionSource: string;
+    sessionMedium: string;
+    platform?: string;
+    sessionCampaign?: string;
+    tracking_code?: string;
+    activeUsers: number | string;
+}
+
+interface ActivationRow {
+    total_new_users: number | string;
+    act_profile_view: number | string;
+    act_booking_intent: number | string;
+    act_message_sent: number | string;
+}
+
+interface SnapshotRow {
+    step: number | string;
+    total_count: number | string;
+    step_label: string;
+    event_name: string;
+}
+
+interface CreatorRow {
+    activeCreators: number | string;
+    avg_response_time_sec: number | string;
+    within1Hour: number | string;
+    within3Hours: number | string;
+    over3Hours: number | string;
+}
+
 /**
  * 일반(General) 보고서 매퍼
  */
 export const mapGeneralKPI = (
-    dailyRows: any[],
-    fixedAuthRows: any[],
+    dailyRows: DailyRow[],
+    fixedAuthRows: FixedAuthRow[],
     funnelRows: EventCountRow[],
-    minDateRow: any[],
-    crashFreeRows: any[] = []
+    minDateRow: MinDateRow[],
+    crashFreeRows: CrashFreeRow[] = []
 ): AnalyticsData => {
     // 1. Charts 데이터 세팅
     const charts = dailyRows.map(row => ({
@@ -102,7 +163,7 @@ export const mapGeneralKPI = (
 /**
  * 획득(Acquisition) 보고서 매퍼
  */
-export const mapAcquisitionData = (trendRows: any[], channelRows: any[], activationRows: any[]) => {
+export const mapAcquisitionData = (trendRows: TrendRow[], channelRows: ChannelRow[], activationRows: ActivationRow[]) => {
     // 1. 유입 규모 추이 (Line Chart)
     const trend = trendRows.map(row => ({
         name: formatDateYYMMDD(row.rawDate).slice(5), // MM-DD
@@ -171,7 +232,7 @@ export const mapAcquisitionData = (trendRows: any[], channelRows: any[], activat
         acc[key].totalRate += curr.conversionRate;
         acc[key].count += 1;
         return acc;
-    }, {} as Record<string, any>);
+    }, {} as Record<string, { name: string; value: number; totalRate: number; count: number }>);
 
     return {
         trend,
@@ -201,10 +262,10 @@ export const mapAcquisitionData = (trendRows: any[], channelRows: any[], activat
 /**
  * Funnel 보고서 매퍼 (New Snapshot 기반)
  */
-export const mapFunnelData = ({ searchRows, communityRows, bookingRows }: { searchRows: any[], communityRows: any[], bookingRows: any[] }) => {
+export const mapFunnelData = ({ searchRows, communityRows, bookingRows }: { searchRows: SnapshotRow[], communityRows: SnapshotRow[], bookingRows: SnapshotRow[] }) => {
     
     // 개별 퍼널의 누적 단계 기반 매퍼 함수
-    const parseFunnelSnapshot = (rows: any[], defaultSteps: { stage: string, key: string }[]) => {
+    const parseFunnelSnapshot = (rows: SnapshotRow[], defaultSteps: { stage: string, key: string }[]) => {
         // 기존 데이터를 key 기준으로 맵핑
         const rowData = (rows || []).reduce((acc, row) => {
             acc[row.event_name] = Number(row.total_count) || 0;
@@ -291,7 +352,7 @@ export const mapFunnelData = ({ searchRows, communityRows, bookingRows }: { sear
 /**
  * Creator 보고서 매퍼
  */
-export const mapCreatorData = (rows: any[]) => {
+export const mapCreatorData = (rows: CreatorRow[]) => {
     const activeCreators = Number(rows?.[0]?.activeCreators) || 0;
     const avgResponseTimeSec = Number(rows?.[0]?.avg_response_time_sec) || 0;
 
