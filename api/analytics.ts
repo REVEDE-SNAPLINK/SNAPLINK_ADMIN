@@ -9,7 +9,8 @@ import {
     buildAcquisitionActivationQuery,
     buildCreatorQuery,
     buildCrashFreeUsersQuery,
-    buildSnapshotFunnelQuery
+    buildSnapshotFunnelQuery,
+    buildCommunityInteractionQuery
 } from './_lib/analytics/queries.js';
 import {
     mapGeneralKPI,
@@ -107,16 +108,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
         }
 
         /* =====================================================
-           FUNNEL
+           FUNNEL & INTERACTIONS (4-Section)
         ===================================================== */
         if (type === 'funnel') {
-            const [searchRows, communityRows, bookingRows] = await Promise.all([
+            const [searchRows, communityInteractionRows, bookingRows] = await Promise.all([
                 runQuery(buildSnapshotFunnelQuery('search'), params).catch((e) => {
                     console.error('[BQ Error - SearchFunnel]', e.message || e);
                     return [];
                 }),
-                runQuery(buildSnapshotFunnelQuery('community'), params).catch((e) => {
-                    console.error('[BQ Error - CommunityFunnel]', e.message || e);
+                runQuery(buildCommunityInteractionQuery(platform), params).catch((e) => {
+                    console.error('[BQ Error - CommunityInteractions]', e.message || e);
                     return [];
                 }),
                 runQuery(buildSnapshotFunnelQuery('booking'), params).catch((e) => {
@@ -125,7 +126,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
                 })
             ]);
 
-            const responseData = mapFunnelData({ searchRows, communityRows, bookingRows });
+            const responseData = mapFunnelData({ searchRows, communityInteractionRows, bookingRows });
             res.status(200).json(responseData);
             return;
         }

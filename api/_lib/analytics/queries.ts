@@ -218,3 +218,32 @@ export const buildCrashFreeUsersQuery = (platform?: string) => `
     FROM total_users t
     CROSS JOIN crashed_users c
 `;
+
+/**
+ * 커뮤니티 상호작용 전용 쿼리 (Bar Chart 용도)
+ * - 게시글 작성 (작가 / 고객)
+ * - 커뮤니티 글 조회, 좋아요, 코멘트, 링크 공유
+ * - 작가 태그 수집
+ */
+export const buildCommunityInteractionQuery = (platform?: string) => `
+    SELECT
+        COUNTIF(event_name = 'community_post_created' AND ${getUserTypeClause('user')}) as post_created_user,
+        COUNTIF(event_name = 'community_post_created' AND ${getUserTypeClause('photographer')}) as post_created_photographer,
+        COUNTIF(event_name = 'community_post_viewed') as views,
+        COUNTIF(event_name = 'community_post_liked') as likes,
+        COUNTIF(event_name = 'community_comment_created') as comments,
+        COUNTIF(event_name = 'community_post_shared') as shares,
+        COUNTIF(event_name = 'photographer_tagged_in_community') as tags,
+        COUNT(DISTINCT IF(event_name IN ('community_post_viewed', 'community_post_liked', 'community_comment_created', 'community_post_shared'), ${getEventParamString('post_id')}, NULL)) as unique_posts
+    FROM \`${getGa4Table()}\`
+    WHERE ${getDateRangeClause()}
+      AND event_name IN (
+          'community_post_created',
+          'community_post_viewed',
+          'community_post_liked',
+          'community_comment_created',
+          'community_post_shared',
+          'photographer_tagged_in_community'
+      )
+      AND ${getPlatformClause(platform)}
+`;
