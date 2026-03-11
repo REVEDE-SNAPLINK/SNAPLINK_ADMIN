@@ -7,9 +7,9 @@ import {
     buildAcquisitionTrendQuery,
     buildAcquisitionChannelsQuery,
     buildAcquisitionActivationQuery,
-    buildEventFunnelQuery,
     buildCreatorQuery,
-    buildCrashFreeUsersQuery
+    buildCrashFreeUsersQuery,
+    buildSnapshotFunnelQuery
 } from './_lib/analytics/queries.js';
 import {
     mapGeneralKPI,
@@ -70,11 +70,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
                     console.error('[BQ Error - FixedActiveUsers]', e.message || e);
                     return [];
                 }),
-                runQuery(buildEventFunnelQuery([
-                    'home_feed_view', 'portfolio_post_view', 'creator_card_impression',
-                    'photographer_profile_view', 'inquiry_start'
-                ], platform, userType), params).catch((e) => {
-                    console.error('[BQ Error - GeneralFunnel]', e.message || e);
+                runQuery(buildSnapshotFunnelQuery('search'), params).catch((e) => {
+                    console.error('[BQ Error - GeneralSearchFunnel]', e.message || e);
                     return [];
                 }),
                 runQuery(`SELECT MIN(FORMAT_DATE('%Y%m%d', PARSE_DATE('%Y%m%d', _TABLE_SUFFIX))) as firstDate FROM \`${process.env.BIGQUERY_PROJECT_ID || ''}.${process.env.BIGQUERY_GA4_DATASET || 'analytics_xxxxxxxx'}.events_*\``).catch((e) => {
@@ -113,16 +110,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
            FUNNEL
         ===================================================== */
         if (type === 'funnel') {
-            const funnelEvents = [
-                'home_feed_view', 'portfolio_post_view', 'creator_card_impression', 'photographer_profile_view', 'inquiry_start',
-                'community_post_create', 'community_post_view', 'community_post_like', 'community_comment_create', 'community_post_share',
-                'booking_intent', 'booking_request_submitted', 'booking_accepted_by_photographer', 'booking_confirmed', 'booking_cancelled_by_user'
-            ];
-            const rows = await runQuery(buildEventFunnelQuery(funnelEvents, platform, userType), params).catch((e) => {
-                console.error('[BQ Error - Funnel]', e.message || e);
-                return [];
-            });
-            const responseData = mapFunnelData(rows);
+            const [searchRows, communityRows, bookingRows] = await Promise.all([
+                runQuery(buildSnapshotFunnelQuery('search'), params).catch((e) => {
+                    console.error('[BQ Error - SearchFunnel]', e.message || e);
+                    return [];
+                }),
+                runQuery(buildSnapshotFunnelQuery('community'), params).catch((e) => {
+                    console.error('[BQ Error - CommunityFunnel]', e.message || e);
+                    return [];
+                }),
+                runQuery(buildSnapshotFunnelQuery('booking'), params).catch((e) => {
+                    console.error('[BQ Error - BookingFunnel]', e.message || e);
+                    return [];
+                })
+            ]);
+
+            const responseData = mapFunnelData({ searchRows, communityRows, bookingRows });
             res.status(200).json(responseData);
             return;
         }

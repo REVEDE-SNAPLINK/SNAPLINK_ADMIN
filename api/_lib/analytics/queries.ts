@@ -143,22 +143,21 @@ export const buildAcquisitionActivationQuery = (platform?: string, userType?: st
 `;
 
 /**
- * 지정된 이벤트 목록의 Funnel Count 쿼리
+ * funnel_daily_snapshot 집계 테이블에서 특정 퍼널의 누적 합산 데이터를 조회하는 쿼리
  */
-export const buildEventFunnelQuery = (events: string[], platform?: string, userType?: string) => {
-    const eventsList = events.map(e => `'${e}'`).join(', ');
-    return `
-        SELECT 
-            event_name as stage_key,
-            COUNT(DISTINCT ${getTargetUserId()}) as count
-        FROM \`${getGa4Table()}\`
-        WHERE ${getDateRangeClause()}
-          AND event_name IN (${eventsList})
-          AND ${getPlatformClause(platform)}
-          AND ${getUserTypeClause(userType)}
-        GROUP BY event_name
-    `;
-};
+export const buildSnapshotFunnelQuery = (funnelType: 'search' | 'community' | 'booking') => `
+  SELECT
+    funnel_type,
+    step,
+    step_label,
+    event_name,
+    SUM(session_count) AS total_count
+  FROM \`snaps-2210a.analytics_processed.funnel_daily_snapshot\`
+  WHERE funnel_type = '${funnelType}'
+    AND snapshot_date BETWEEN CAST(@startDate AS DATE) AND CAST(@endDate AS DATE)
+  GROUP BY funnel_type, step, step_label, event_name
+  ORDER BY step ASC
+`;
 
 /**
  * 작가 운영/응답성 지표 쿼리

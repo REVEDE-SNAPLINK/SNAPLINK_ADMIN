@@ -191,55 +191,61 @@ export const mapAcquisitionData = (trendRows: any[], channelRows: any[], activat
 };
 
 /**
- * Funnel 보고서 매퍼
+ * Funnel 보고서 매퍼 (New Snapshot 기반)
  */
-export const mapFunnelData = (rows: EventCountRow[]) => {
-    const eventData = rows.reduce((acc, row) => {
-        acc[row.stage_key] = Number(row.count) || 0;
-        return acc;
-    }, {} as Record<string, number>);
-
-    // Math.max 삭제, 퍼센테이지 기준을 baseCount(첫 번째 요소의 카운트)로 한정함
-    const createFnl = (stages: any[], baseKey: string) => {
-        const initialCounts = stages.map(s => ({
-            ...s,
-            count: eventData[s.key] || 0
-        }));
-
-        const baseCount = Math.max(eventData[baseKey] || 0, initialCounts[0].count, 1);
-        return initialCounts.map(s => ({
-            stage: s.stage,
-            count: s.count,
-            percentage: Math.round((s.count / baseCount) * 100)
-        }));
+export const mapFunnelData = ({ searchRows, communityRows, bookingRows }: { searchRows: any[], communityRows: any[], bookingRows: any[] }) => {
+    
+    // 개별 퍼널의 누적 단계 기반 매퍼 함수
+    const parseFunnelSnapshot = (rows: any[]) => {
+        if (!rows || rows.length === 0) return [];
+        
+        // step 오름차순으로 정렬
+        const sorted = [...rows].sort((a, b) => Number(a.step) - Number(b.step));
+        const baseCount = Number(sorted[0].total_count) || 1; // 첫 단계 수치 혹은 1 (0방지)
+        
+        return sorted.map((row, idx) => {
+            const count = Number(row.total_count) || 0;
+            const prevCount = idx > 0 ? (Number(sorted[idx - 1].total_count) || 0) : count;
+            
+            // 첫 단계 기준 누적 퍼센티지
+            const percentage = Math.round((count / Math.max(baseCount, 1)) * 100);
+            
+            // 이전 단계 대비 전환율 및 이탈률
+            const convRate = prevCount > 0 ? Math.round((count / prevCount) * 100) : 0;
+            const dropRate = 100 - convRate;
+            
+            return {
+                stage: row.step_label,
+                key: row.event_name,
+                count,
+                percentage,
+                conversionFromPrev: idx === 0 ? 100 : convRate,
+                dropoffFromPrev: idx === 0 ? 0 : dropRate
+            };
+        });
     };
 
+    const searchFunnel = parseFunnelSnapshot(searchRows);
+    const communityFunnel = parseFunnelSnapshot(communityRows);
+    
+    // 예약 퍼널의 경우 마지막 취소 파트를 분기용으로 따로 빼는 로직
+    const bookingFull = parseFunnelSnapshot(bookingRows);
+    const bookingSteps = bookingFull.filter(s => s.key !== 'booking_accepted_by_photographer' && s.key !== 'booking_rejected_by_photographer' && s.key !== 'booking_cancelled_by_user');
+    
+    const findBookingState = (key: string) => Number(bookingFull.find(s => s.key === key)?.count || 0);
+
+    const bookingFinal = [
+        { stage: '예약 확정', count: findBookingState('booking_accepted_by_photographer'), isPositive: true },
+        { stage: '예약 거절', count: findBookingState('booking_rejected_by_photographer'), isPositive: false },
+        { stage: '유저 취소', count: findBookingState('booking_cancelled_by_user'), isPositive: false }
+    ].filter(item => item.count > 0 || item.stage === '예약 확정'); // 비어있지 않거나 긍정 지표는 무조건 유지
+
     return {
-        discoveryFunnel: createFnl([
-            { stage: '홈 피드', key: 'home_feed_view' },
-            { stage: '작가 상세', key: 'portfolio_post_view' },
-            { stage: '작가 카드', key: 'creator_card_impression' }, // 변경됨
-            { stage: '작가 프로필', key: 'photographer_profile_view' },
-            { stage: '문의 시작', key: 'inquiry_start' } // 변경됨
-        ], 'home_feed_view'),
-        communityInteractions: [
-            { name: '생성', count: eventData['community_post_create'] || 0 },
-            { name: '조회', count: eventData['community_post_view'] || 0 },
-            { name: '좋아요', count: eventData['community_post_like'] || 0 },
-            { name: '댓글', count: eventData['community_comment_create'] || 0 },
-            { name: '공유', count: eventData['community_post_share'] || 0 }
-        ],
+        discoveryFunnel: searchFunnel,    // 이전 discoveryFunnel이라는 키를 프론트 호환성을 위해 유지하되 내용은 검색 퍼널로 교체
+        communityInteractions: communityFunnel, 
         bookingFunnel: {
-            steps: createFnl([
-                { stage: '예약 시도', key: 'booking_intent' },
-                { stage: '예약 폼 제출', key: 'booking_request_submitted' },
-                { stage: '예약 승인', key: 'booking_accepted_by_photographer' }, // 변경됨
-                { stage: '예약 확정', key: 'booking_confirmed' }
-            ], 'booking_intent'),
-            final: [
-                { stage: '예약 확정', count: eventData['booking_confirmed'] || 0, isPositive: true },
-                { stage: '예약 취소', count: eventData['booking_cancelled_by_user'] || 0, isPositive: false } // 변경됨
-            ]
+            steps: bookingSteps,
+            final: bookingFinal
         }
     };
 };
