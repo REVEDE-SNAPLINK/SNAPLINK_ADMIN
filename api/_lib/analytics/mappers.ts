@@ -55,14 +55,17 @@ interface SnapshotRow {
 }
 
 interface CommunityInteractionRow {
-    post_created_user: number | string;
-    post_created_photographer: number | string;
-    views: number | string;
-    likes: number | string;
-    comments: number | string;
-    shares: number | string;
-    tags: number | string;
-    unique_posts: number | string;
+    event_date: string;
+    post_create_photographer: number | string;
+    post_create_user: number | string;
+    post_view_count: number | string;
+    like_count: number | string;
+    unlike_count: number | string;
+    comment_count: number | string;
+    share_count: number | string;
+    view_with_creator_tag: number | string;
+    view_without_creator_tag: number | string;
+    like_with_creator_tag: number | string;
 }
 
 interface CreatorRow {
@@ -273,7 +276,19 @@ export const mapAcquisitionData = (trendRows: TrendRow[], channelRows: ChannelRo
 /**
  * Funnel 보고서 매퍼 (New Snapshot 기반 + Community Bar Chart)
  */
-export const mapFunnelData = ({ searchRows, communityInteractionRows, bookingRows }: { searchRows: SnapshotRow[], communityInteractionRows: CommunityInteractionRow[], bookingRows: SnapshotRow[] }) => {
+export const mapFunnelData = ({ 
+    searchRows, 
+    communityInteractionRows, 
+    inquiryRows,
+    bookingRows,
+    screensPerSessionRows
+}: { 
+    searchRows: SnapshotRow[], 
+    communityInteractionRows: CommunityInteractionRow[], 
+    inquiryRows: SnapshotRow[],
+    bookingRows: SnapshotRow[],
+    screensPerSessionRows: SnapshotRow[]
+}) => {
     
     // 개별 퍼널의 누적 단계 기반 매퍼 함수
     const parseFunnelSnapshot = (rows: SnapshotRow[], defaultSteps: { stage: string, key: string }[]) => {
@@ -313,54 +328,54 @@ export const mapFunnelData = ({ searchRows, communityInteractionRows, bookingRow
         });
     };
 
+    // (A) 작가/콘텐츠 탐색 퍼널
     const searchSteps = [
-        { stage: '커뮤니티 목록', key: 'community_feed_viewed' },
-        { stage: '게시글 상세', key: 'community_post_viewed' },
-        { stage: '작가 태그 클릭', key: 'photographer_tagged_in_community' },
-        { stage: '문의 진입', key: 'inquiry_start' }
+        { stage: '피드 게시글 조회', key: 'community_post_view' },
+        { stage: '작가 프로필 클릭', key: 'community_photographer_profile_click' },
+        { stage: '프로필 조회', key: 'photographer_profile_view' },
+        { stage: '문의 시작', key: 'chat_initiated' },
+        { stage: '첫 메시지 전송', key: 'chat_message_sent' }
     ];
-
     const searchFunnel = parseFunnelSnapshot(searchRows, searchSteps);
     
-    // 커뮤니티 상호작용 (Bar Chart) 데이터 가공
-    const commData = communityInteractionRows?.[0] || {
-        post_created_user: 0,
-        post_created_photographer: 0,
-        views: 0,
-        likes: 0,
-        comments: 0,
-        shares: 0,
-        tags: 0,
-        unique_posts: 0
-    };
-    
+    // (B) 커뮤니티 상호작용 (Bar Chart) 데이터 가공
     const communityInteractions = {
-        posts: { user: Number(commData.post_created_user), photographer: Number(commData.post_created_photographer) },
-        actions: [
-            { name: '게시글 조회', value: Number(commData.views) },
-            { name: '좋아요', value: Number(commData.likes) },
-            { name: '댓글 작성', value: Number(commData.comments) },
-            { name: '공유', value: Number(commData.shares) },
-            { name: '작가 태그', value: Number(commData.tags) },
-        ],
+        // 일별 트렌드 데이터
+        trendData: (communityInteractionRows || []).map(row => ({
+            date: formatDateYYMMDD(row.event_date).slice(5),
+            postCreatedPhotographer: Number(row.post_create_photographer),
+            postCreatedUser: Number(row.post_create_user),
+            views: Number(row.post_view_count),
+            likes: Number(row.like_count),
+            comments: Number(row.comment_count),
+            shares: Number(row.share_count)
+        })),
+        // DB API가 구현될 때까지 보여줄 Mock (프론트에서 이 값을 참고하되 API 준비 전이라는 안내 표시)
         stats: {
-            totalActions: Number(commData.likes) + Number(commData.comments),
-            avgActionsPerPost: Number(commData.unique_posts) > 0 ? Number(((Number(commData.likes) + Number(commData.comments)) / Number(commData.unique_posts)).toFixed(1)) : 0
+            totalPosts: 0,
+            totalLikes: 0,
+            totalComments: 0,
+            avgLikesPerPost: 0,
+            avgCommentsPerPost: 0,
+            postsWithCreatorTag: 0,
+            postsWithCreatorTagRate: 0
         }
     };
 
-    // 문의 퍼널 (Mock 데이터 생성 - 향후 파이프라인 연동 시 교체)
-    const inquiryFunnel = [
-        { stage: '채팅방 생성', key: 'chat_created', count: 0, percentage: 100, conversionFromPrev: 100, dropoffFromPrev: 0 },
-        { stage: '메시지 1회 전송', key: 'chat_message_sent', count: 0, percentage: 0, conversionFromPrev: 0, dropoffFromPrev: 100 },
-        { stage: '작가 첫 응답', key: 'photographer_responded', count: 0, percentage: 0, conversionFromPrev: 0, dropoffFromPrev: 100 },
-        { stage: 'Tread active', key: 'chat_active', count: 0, percentage: 0, conversionFromPrev: 0, dropoffFromPrev: 100 }
+    // (C) 문의 퍼널
+    const inquirySteps = [
+        { stage: '문의 시작', key: 'chat_initiated' },
+        { stage: '첫 메시지 전송', key: 'chat_message_sent' },
+        { stage: '작가 첫 응답', key: 'photographer_response' },
+        { stage: '대화 활성화', key: 'thread_active_derived' }
     ];
+    const inquiryFunnel = parseFunnelSnapshot(inquiryRows, inquirySteps);
 
-    // 예약 퍼널 처리
+    // (D) 예약 퍼널 처리
     const bookingInitialSteps = [
         { stage: '예약 의도', key: 'booking_intent' },
-        { stage: '예약 요청', key: 'booking_requested' }
+        { stage: '예약 요청 제출', key: 'booking_request_submitted' },
+        { stage: '예약 생성 완료', key: 'booking_request_delivery_succeeded' }
     ];
     const bookingStepsFull = parseFunnelSnapshot(bookingRows, bookingInitialSteps);
     
@@ -374,9 +389,19 @@ export const mapFunnelData = ({ searchRows, communityInteractionRows, bookingRow
 
     const bookingFinal = [
         { stage: '예약 확정', count: findBookingState('booking_accepted_by_photographer'), isPositive: true },
-        { stage: '예약 취소', count: findBookingState('booking_cancelled_by_user'), isPositive: false },
-        { stage: '거절/만료', count: findBookingState('booking_rejected_by_photographer'), isPositive: false }
+        { stage: '예약 거절', count: findBookingState('booking_rejected_by_photographer'), isPositive: false },
+        { stage: '유저 취소', count: findBookingState('booking_cancelled_by_user'), isPositive: false }
     ].filter(item => item.count > 0 || item.stage === '예약 확정'); // 비어있지 않거나 긍정 지표는 무조건 유지
+
+    // (E) 탐색 깊이 퍼널
+    const screensPerSessionSteps = [
+        { stage: '앱 진입', key: 'app_open' },
+        { stage: '작가 탐색', key: 'creator_card_click' },
+        { stage: '프로필 조회', key: 'photographer_profile_view' },
+        { stage: '문의 시작', key: 'chat_initiated' },
+        { stage: '예약 진행', key: 'booking_intent' }
+    ];
+    const screensPerSession = parseFunnelSnapshot(screensPerSessionRows, screensPerSessionSteps);
 
     return {
         discoveryFunnel: searchFunnel,
@@ -385,7 +410,8 @@ export const mapFunnelData = ({ searchRows, communityInteractionRows, bookingRow
         bookingFunnel: {
             steps: bookingStepsFull,
             final: bookingFinal
-        }
+        },
+        screensPerSession
     };
 };
 

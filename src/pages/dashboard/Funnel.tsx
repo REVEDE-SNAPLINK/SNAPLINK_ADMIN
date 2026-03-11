@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { getFunnelData } from '@/api/analytics';
 import { TraditionalFunnel } from '@/components/dashboard/TraditionalFunnel';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
 interface FunnelStep {
     stage: string;
@@ -16,15 +16,31 @@ interface FunnelStep {
 interface FunnelData {
     discoveryFunnel: FunnelStep[];
     communityInteractions: {
-        posts: { user: number; photographer: number };
-        actions: { name: string; value: number }[];
-        stats: { totalActions: number; avgActionsPerPost: number };
+        trendData: {
+            date: string;
+            postCreatedPhotographer: number;
+            postCreatedUser: number;
+            views: number;
+            likes: number;
+            comments: number;
+            shares: number;
+        }[];
+        stats: {
+            totalPosts: number;
+            totalLikes: number;
+            totalComments: number;
+            avgLikesPerPost: number;
+            avgCommentsPerPost: number;
+            postsWithCreatorTag: number;
+            postsWithCreatorTagRate: number;
+        };
     };
     inquiryFunnel: FunnelStep[];
     bookingFunnel: {
         steps: FunnelStep[];
         final: { stage: string; count: number; isPositive: boolean }[];
     };
+    screensPerSession: FunnelStep[];
 }
 
 export default function FunnelDashboard() {
@@ -79,44 +95,35 @@ export default function FunnelDashboard() {
                         <div className="mb-6 flex justify-between items-start">
                             <div>
                                 <h3 className="text-xl font-black text-gray-900 tracking-tight leading-none mb-2">(B) 커뮤니티 상호작용</h3>
-                                <p className="text-xs font-bold text-gray-400">게시글 작성 및 유저 반응 활동 지표</p>
+                                <p className="text-xs font-bold text-gray-400">게시글/좋아요/댓글/공유 일별 추이 (세로 막대형)</p>
                             </div>
                             <div className="flex gap-2">
-                                <div className="bg-indigo-50 px-3 py-1.5 rounded-lg text-right">
-                                    <span className="text-[9px] font-black text-indigo-600 block mb-0.5 uppercase tracking-widest">누적 반응</span>
-                                    <span className="text-xl font-black text-indigo-600">{data.communityInteractions?.stats?.totalActions ?? 0}</span>
+                                <div className="bg-indigo-50 px-3 py-1.5 rounded-lg text-right relative group cursor-help">
+                                    <span className="text-[9px] font-black text-indigo-600 block mb-0.5 uppercase tracking-widest">누적 데이터 (DB 연동필요)</span>
+                                    <span className="text-xl font-black text-indigo-300">N/A</span>
+                                    <div className="absolute hidden group-hover:block w-56 bg-gray-900 text-white text-xs p-3 rounded -bottom-14 right-0 z-50 shadow-xl whitespace-pre-wrap">백엔드 DB 누적 API 연동 전입니다. /api/admin/analytics/community/stats 구현 후 표시됩니다.</div>
                                 </div>
-                                <div className="bg-purple-50 px-3 py-1.5 rounded-lg text-right">
-                                    <span className="text-[9px] font-black text-purple-600 block mb-0.5 uppercase tracking-widest">게시글당 평균</span>
-                                    <span className="text-xl font-black text-purple-600">{data.communityInteractions?.stats?.avgActionsPerPost ?? 0}</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Top stat row (작성 수) */}
-                        <div className="flex gap-4 mb-6">
-                            <div className="flex-1 bg-gray-50 rounded-xl p-4 flex justify-between items-center">
-                                <span className="text-sm font-bold text-gray-500">작가 작성 게시글</span>
-                                <span className="text-lg font-black text-gray-900">{data.communityInteractions?.posts?.photographer ?? 0}</span>
-                            </div>
-                            <div className="flex-1 bg-gray-50 rounded-xl p-4 flex justify-between items-center">
-                                <span className="text-sm font-bold text-gray-500">유저 작성 게시글</span>
-                                <span className="text-lg font-black text-gray-900">{data.communityInteractions?.posts?.user ?? 0}</span>
                             </div>
                         </div>
 
                         {/* Bar Chart */}
-                        <div className="flex-1 min-h-[250px]">
+                        <div className="flex-1 min-h-[350px]">
                             <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={data.communityInteractions?.actions || []} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                <BarChart data={data.communityInteractions?.trendData || []} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6B7280', fontWeight: 'bold' }} dy={10} />
+                                    <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6B7280', fontWeight: 'bold' }} dy={10} />
                                     <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6B7280' }} />
                                     <Tooltip 
                                         cursor={{ fill: '#F3F4F6' }}
                                         contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
                                     />
-                                    <Bar dataKey="value" fill="#6366f1" radius={[6, 6, 6, 6]} barSize={40} />
+                                    <Legend wrapperStyle={{ fontSize: 11, fontWeight: 'bold', paddingTop: 10 }} />
+                                    <Bar dataKey="postCreatedPhotographer" name="작가 작성" stackId="a" fill="#3b82f6" radius={[0, 0, 6, 6]} maxBarSize={40} />
+                                    <Bar dataKey="postCreatedUser" name="유저 작성" stackId="a" fill="#93c5fd" radius={[6, 6, 0, 0]} maxBarSize={40} />
+                                    <Bar dataKey="views" name="조회" fill="#10b981" radius={[6, 6, 6, 6]} maxBarSize={40} />
+                                    <Bar dataKey="likes" name="좋아요" fill="#f43f5e" radius={[6, 6, 6, 6]} maxBarSize={40} />
+                                    <Bar dataKey="comments" name="댓글" fill="#f59e0b" radius={[6, 6, 6, 6]} maxBarSize={40} />
+                                    <Bar dataKey="shares" name="공유" fill="#8b5cf6" radius={[6, 6, 6, 6]} maxBarSize={40} />
                                 </BarChart>
                             </ResponsiveContainer>
                         </div>
@@ -182,6 +189,27 @@ export default function FunnelDashboard() {
                                 </div>
                             </div>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* 하단 1분할: (E) 탐색 깊이 퍼널 */}
+            <div className="mt-8">
+                <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between">
+                    <div className="mb-8 flex justify-between items-start">
+                        <div>
+                            <h3 className="text-xl font-black text-gray-900 tracking-tight leading-none mb-2">(E) 탐색 깊이 (Screens per Session)</h3>
+                            <p className="text-xs font-bold text-gray-400">앱 진입 → 작가 탐색 → 프로필 조회 → 문의 시작 → 예약 진행</p>
+                        </div>
+                        <div className="bg-purple-50 px-3 py-1.5 rounded-lg text-right">
+                            <span className="text-[9px] font-black text-purple-600 block mb-0.5 uppercase tracking-widest">세션 유지율</span>
+                            <span className="text-2xl font-black text-purple-600">
+                                {data.screensPerSession?.[data.screensPerSession.length - 1]?.percentage ?? 0}%
+                            </span>
+                        </div>
+                    </div>
+                    <div className="max-w-4xl mx-auto w-full">
+                        <TraditionalFunnel items={data.screensPerSession} colorBase={['#8b5cf6', '#a78bfa', '#c4b5fd', '#ddd6fe', '#ede9fe']} />
                     </div>
                 </div>
             </div>

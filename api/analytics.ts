@@ -111,22 +111,42 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
            FUNNEL & INTERACTIONS (4-Section)
         ===================================================== */
         if (type === 'funnel') {
-            const [searchRows, communityInteractionRows, bookingRows] = await Promise.all([
-                runQuery(buildSnapshotFunnelQuery('search'), params).catch((e) => {
-                    console.error('[BQ Error - SearchFunnel]', e.message || e);
+            const [
+                searchRows, 
+                communityInteractionRows, 
+                inquiryRows,
+                bookingRows,
+                screensPerSessionRows
+            ] = await Promise.all([
+                runQuery(buildSnapshotFunnelQuery('community_content'), params).catch((e) => {
+                    console.error('[BQ Error - CommunityContentFunnel]', e.message || e);
                     return [];
                 }),
                 runQuery(buildCommunityInteractionQuery(platform), params).catch((e) => {
                     console.error('[BQ Error - CommunityInteractions]', e.message || e);
                     return [];
                 }),
+                runQuery(buildSnapshotFunnelQuery('inquiry'), params).catch((e) => {
+                    console.error('[BQ Error - InquiryFunnel]', e.message || e);
+                    return [];
+                }),
                 runQuery(buildSnapshotFunnelQuery('booking'), params).catch((e) => {
                     console.error('[BQ Error - BookingFunnel]', e.message || e);
+                    return [];
+                }),
+                runQuery(buildSnapshotFunnelQuery('screens_per_session'), params).catch((e) => {
+                    console.error('[BQ Error - ScreensPerSessionFunnel]', e.message || e);
                     return [];
                 })
             ]);
 
-            const responseData = mapFunnelData({ searchRows, communityInteractionRows, bookingRows });
+            const responseData = mapFunnelData({ 
+                searchRows, 
+                communityInteractionRows, 
+                inquiryRows,
+                bookingRows,
+                screensPerSessionRows
+            });
             res.status(200).json(responseData);
             return;
         }

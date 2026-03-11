@@ -145,7 +145,7 @@ export const buildAcquisitionActivationQuery = (platform?: string, userType?: st
 /**
  * funnel_daily_snapshot 집계 테이블에서 특정 퍼널의 누적 합산 데이터를 조회하는 쿼리
  */
-export const buildSnapshotFunnelQuery = (funnelType: 'search' | 'community' | 'booking') => `
+export const buildSnapshotFunnelQuery = (funnelType: 'community_content' | 'inquiry' | 'booking' | 'screens_per_session' | string) => `
   SELECT
     funnel_type,
     step,
@@ -226,24 +226,37 @@ export const buildCrashFreeUsersQuery = (platform?: string) => `
  * - 작가 태그 수집
  */
 export const buildCommunityInteractionQuery = (platform?: string) => `
+    WITH daily AS (
+        SELECT
+            event_date,
+            event_name,
+            ${getEventParamString('user_type')} AS user_type,
+            ${getEventParamInt('has_tagged_creator')} AS has_tagged_creator,
+            ${getEventParamInt('liked')} AS liked
+        FROM \`${getGa4Table()}\`
+        WHERE ${getDateRangeClause()}
+          AND event_name IN (
+            'community_post_create',
+            'community_post_view',
+            'community_post_like',
+            'community_comment_create',
+            'community_post_share'
+          )
+          AND ${getPlatformClause(platform)}
+    )
     SELECT
-        COUNTIF(event_name = 'community_post_created' AND ${getUserTypeClause('user')}) as post_created_user,
-        COUNTIF(event_name = 'community_post_created' AND ${getUserTypeClause('photographer')}) as post_created_photographer,
-        COUNTIF(event_name = 'community_post_viewed') as views,
-        COUNTIF(event_name = 'community_post_liked') as likes,
-        COUNTIF(event_name = 'community_comment_created') as comments,
-        COUNTIF(event_name = 'community_post_shared') as shares,
-        COUNTIF(event_name = 'photographer_tagged_in_community') as tags,
-        COUNT(DISTINCT IF(event_name IN ('community_post_viewed', 'community_post_liked', 'community_comment_created', 'community_post_shared'), ${getEventParamString('post_id')}, NULL)) as unique_posts
-    FROM \`${getGa4Table()}\`
-    WHERE ${getDateRangeClause()}
-      AND event_name IN (
-          'community_post_created',
-          'community_post_viewed',
-          'community_post_liked',
-          'community_comment_created',
-          'community_post_shared',
-          'photographer_tagged_in_community'
-      )
-      AND ${getPlatformClause(platform)}
+        event_date,
+        COUNTIF(event_name = 'community_post_create' AND user_type = 'photographer') AS post_create_photographer,
+        COUNTIF(event_name = 'community_post_create' AND user_type = 'user') AS post_create_user,
+        COUNTIF(event_name = 'community_post_view') AS post_view_count,
+        COUNTIF(event_name = 'community_post_like' AND liked = 1) AS like_count,
+        COUNTIF(event_name = 'community_post_like' AND liked = 0) AS unlike_count,
+        COUNTIF(event_name = 'community_comment_create') AS comment_count,
+        COUNTIF(event_name = 'community_post_share') AS share_count,
+        COUNTIF(event_name = 'community_post_view' AND has_tagged_creator = 1) AS view_with_creator_tag,
+        COUNTIF(event_name = 'community_post_view' AND has_tagged_creator = 0) AS view_without_creator_tag,
+        COUNTIF(event_name = 'community_post_like' AND liked = 1 AND has_tagged_creator = 1) AS like_with_creator_tag
+    FROM daily
+    GROUP BY event_date
+    ORDER BY event_date ASC
 `;
