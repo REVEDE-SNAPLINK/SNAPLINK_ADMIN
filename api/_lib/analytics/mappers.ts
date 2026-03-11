@@ -42,11 +42,19 @@ export const mapGeneralKPI = (
 
     // 이전처럼 Math.max로 데이터를 위장 증식시키지 않습니다. (UI의 퍼센트 계산만 첫 단계 대비 상대값으로 도출)
     const baseF = initialScreensCounts[0].count > 0 ? initialScreensCounts[0].count : 1;
-    const screensFunnel = initialScreensCounts.map(s => ({
-        stage: s.stage,
-        count: s.count,
-        percentage: Math.round((s.count / baseF) * 100)
-    }));
+    const screensFunnel = initialScreensCounts.map((s, idx) => {
+        const percentage = Math.round((s.count / baseF) * 100);
+        const prevCount = idx > 0 ? initialScreensCounts[idx - 1].count : s.count;
+        const convRate = prevCount > 0 ? Math.round((s.count / prevCount) * 100) : 0;
+        return {
+            stage: s.stage,
+            key: s.key,
+            count: s.count,
+            percentage,
+            conversionFromPrev: idx === 0 ? 100 : convRate,
+            dropoffFromPrev: idx === 0 ? 0 : 100 - convRate
+        };
+    });
 
     // 4. 평균 요약
     const avgSessionsPerUser = charts.length > 0

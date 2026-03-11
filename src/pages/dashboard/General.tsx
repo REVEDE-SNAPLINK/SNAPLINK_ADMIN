@@ -3,6 +3,7 @@ import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { MetricCard } from '@/components/dashboard/MetricCard';
 import { StickinessGauge } from '@/components/dashboard/StickinessGauge';
 import { CohortTable } from '@/components/dashboard/CohortTable';
+import { TraditionalFunnel } from '@/components/dashboard/TraditionalFunnel';
 import { getGeneralKPI } from '@/api/analytics';
 import {
     XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area,
@@ -108,33 +109,15 @@ export default function GeneralDashboard() {
             </div>
 
             {/* Screens per Session Funnel */}
-            <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100 mb-8">
-                <div className="mb-8">
-                    <h3 className="text-xl font-black text-gray-800">탐색 깊이 (세션당 페이지뷰)</h3>
-                    <p className="text-sm text-gray-500 mt-1">앱 진입부터 예약 요청까지의 핵심 퍼널</p>
+            <div className="bg-white p-10 rounded-2xl shadow-sm border border-gray-100 mb-8 max-w-4xl mx-auto">
+                <div className="mb-10 flex justify-between items-start">
+                    <div>
+                        <h3 className="text-2xl font-black text-gray-900 tracking-tight leading-none mb-2">탐색 깊이 (세션당 페이지뷰)</h3>
+                        <p className="text-sm font-bold text-gray-400">앱 진입부터 예약/문의 시작까지의 핵심 퍼널</p>
+                    </div>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-5 gap-4 relative">
-                    {data.screensFunnel?.map((step: any, index: number) => (
-                        <div key={step.stage} className="flex flex-col items-center relative">
-                            <div className="w-full h-16 bg-blue-50 rounded-lg flex items-center justify-center mb-3 relative overflow-hidden">
-                                <div
-                                    className="absolute bottom-0 left-0 w-full bg-blue-500 opacity-20 transition-all duration-1000"
-                                    style={{ height: `${step.percentage}%` }}
-                                />
-                                <span className="text-xl font-black text-blue-700 relative z-10">{step.count.toLocaleString()}</span>
-                            </div>
-                            <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">{step.stage}</p>
-                            <p className="text-xs font-black text-blue-600">{step.percentage}%</p>
-                            {index < data.screensFunnel.length - 1 && (
-                                <div className="hidden md:block absolute -right-2 top-8 text-gray-200">
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                                        <path d="M9 18l6-6-6-6" />
-                                    </svg>
-                                </div>
-                            )}
-                        </div>
-                    ))}
-                </div>
+                
+                <TraditionalFunnel items={data.screensFunnel} colorBase={['#3b82f6', '#60a5fa', '#93c5fd', '#bfdbfe', '#dbeafe']} />
             </div>
 
             {/* Bottom Row: Stability & Cohort */}
