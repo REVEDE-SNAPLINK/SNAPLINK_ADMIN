@@ -391,7 +391,7 @@ export const mapFunnelData = ({
         { stage: '예약 확정', count: findBookingState('booking_accepted_by_photographer'), isPositive: true },
         { stage: '예약 거절', count: findBookingState('booking_rejected_by_photographer'), isPositive: false },
         { stage: '유저 취소', count: findBookingState('booking_cancelled_by_user'), isPositive: false }
-    ].filter(item => item.count > 0 || item.stage === '예약 확정'); // 비어있지 않거나 긍정 지표는 무조건 유지
+    ];
 
     // (E) 탐색 깊이 퍼널
     const screensPerSessionSteps = [

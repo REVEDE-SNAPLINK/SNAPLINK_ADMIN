@@ -1,6 +1,5 @@
 import {
     getGa4Table,
-    getCrashlyticsTable,
     getDateRangeClause,
     getEventParamInt,
     getEventParamString,
@@ -205,11 +204,16 @@ export const buildCrashFreeUsersQuery = (platform?: string) => `
           AND ${getPlatformClause(platform)}
     ),
     crashed_users AS (
-        SELECT COUNT(DISTINCT user_pseudo_id) as crashed_count
-        FROM \`${getCrashlyticsTable()}\`
+        SELECT COUNT(DISTINCT installation_uuid) as crashed_count
+        FROM (
+            SELECT installation_uuid, event_timestamp, is_fatal 
+            FROM \`${process.env.BIGQUERY_PROJECT_ID || 'snaps-2210a'}.${process.env.BIGQUERY_CRASHLYTICS_DATASET || 'firebase_crashlytics'}.com_revede_snaplink_ANDROID\`
+            UNION ALL
+            SELECT installation_uuid, event_timestamp, is_fatal 
+            FROM \`${process.env.BIGQUERY_PROJECT_ID || 'snaps-2210a'}.${process.env.BIGQUERY_CRASHLYTICS_DATASET || 'firebase_crashlytics'}.com_revede_snaplink_IOS\`
+        )
         WHERE DATE(event_timestamp) BETWEEN CAST(@startDate AS DATE) AND CAST(@endDate AS DATE)
           AND is_fatal = true
-          -- 플랫폼 필터링 로직이 필요한 경우 (Crashlytics 스키마 기준 'application.display_version' 등 확인 필요)
     )
     SELECT
         t.total_count,
