@@ -204,27 +204,35 @@ export const mapAcquisitionData = (trendRows: any[], channelRows: any[], activat
 export const mapFunnelData = ({ searchRows, communityRows, bookingRows }: { searchRows: any[], communityRows: any[], bookingRows: any[] }) => {
     
     // 개별 퍼널의 누적 단계 기반 매퍼 함수
-    const parseFunnelSnapshot = (rows: any[]) => {
-        if (!rows || rows.length === 0) return [];
-        
-        // step 오름차순으로 정렬
-        const sorted = [...rows].sort((a, b) => Number(a.step) - Number(b.step));
-        const baseCount = Number(sorted[0].total_count) || 1; // 첫 단계 수치 혹은 1 (0방지)
-        
-        return sorted.map((row, idx) => {
-            const count = Number(row.total_count) || 0;
-            const prevCount = idx > 0 ? (Number(sorted[idx - 1].total_count) || 0) : count;
-            
-            // 첫 단계 기준 누적 퍼센티지
-            const percentage = Math.round((count / Math.max(baseCount, 1)) * 100);
-            
-            // 이전 단계 대비 전환율 및 이탈률
+    const parseFunnelSnapshot = (rows: any[], defaultSteps: { stage: string, key: string }[]) => {
+        // 기존 데이터를 key 기준으로 맵핑
+        const rowData = (rows || []).reduce((acc, row) => {
+            acc[row.event_name] = Number(row.total_count) || 0;
+            return acc;
+        }, {} as Record<string, number>);
+
+        // 기본 단계를 순회하며 count 매핑 (데이터가 없어도 배열 반환 가능)
+        const mappedSteps = defaultSteps.map((step) => {
+            return {
+                stage: step.stage,
+                key: step.key,
+                count: rowData[step.key] || 0
+            };
+        });
+
+        const baseCount = Math.max(mappedSteps[0]?.count || 1, 1);
+
+        return mappedSteps.map((row, idx) => {
+            const count = row.count;
+            const prevCount = idx > 0 ? mappedSteps[idx - 1].count : count;
+
+            const percentage = Math.round((count / baseCount) * 100);
             const convRate = prevCount > 0 ? Math.round((count / prevCount) * 100) : 0;
             const dropRate = 100 - convRate;
-            
+
             return {
-                stage: row.step_label,
-                key: row.event_name,
+                stage: row.stage,
+                key: row.key,
                 count,
                 percentage,
                 conversionFromPrev: idx === 0 ? 100 : convRate,
@@ -233,14 +241,36 @@ export const mapFunnelData = ({ searchRows, communityRows, bookingRows }: { sear
         });
     };
 
-    const searchFunnel = parseFunnelSnapshot(searchRows);
-    const communityFunnel = parseFunnelSnapshot(communityRows);
+    const searchSteps = [
+        { stage: '검색 시작', key: 'search_start' },
+        { stage: '결과 노출', key: 'search_results_viewed' },
+        { stage: '상세 열람', key: 'search_result_clicked' },
+        { stage: '문의 시작', key: 'inquiry_start' }
+    ];
+
+    const communitySteps = [
+        { stage: '피드 조회', key: 'community_feed_viewed' },
+        { stage: '프로필 열람', key: 'photographer_profile_view' },
+        { stage: '문의 시작', key: 'inquiry_start' }
+    ];
+
+    const bookingInitialSteps = [
+        { stage: '예약 요청', key: 'booking_requested' }
+    ];
+
+    const searchFunnel = parseFunnelSnapshot(searchRows, searchSteps);
+    const communityFunnel = parseFunnelSnapshot(communityRows, communitySteps);
     
-    // 예약 퍼널의 경우 마지막 취소 파트를 분기용으로 따로 빼는 로직
-    const bookingFull = parseFunnelSnapshot(bookingRows);
-    const bookingSteps = bookingFull.filter(s => s.key !== 'booking_accepted_by_photographer' && s.key !== 'booking_rejected_by_photographer' && s.key !== 'booking_cancelled_by_user');
+    // 예약 퍼널 처리
+    const bookingStepsFull = parseFunnelSnapshot(bookingRows, bookingInitialSteps);
     
-    const findBookingState = (key: string) => Number(bookingFull.find(s => s.key === key)?.count || 0);
+    // 예약 퍼널의 분기를 위한 데이터 매핑
+    const bookingRowData = (bookingRows || []).reduce((acc, row) => {
+        acc[row.event_name] = Number(row.total_count) || 0;
+        return acc;
+    }, {} as Record<string, number>);
+
+    const findBookingState = (key: string) => bookingRowData[key] || 0;
 
     const bookingFinal = [
         { stage: '예약 확정', count: findBookingState('booking_accepted_by_photographer'), isPositive: true },
@@ -249,10 +279,10 @@ export const mapFunnelData = ({ searchRows, communityRows, bookingRows }: { sear
     ].filter(item => item.count > 0 || item.stage === '예약 확정'); // 비어있지 않거나 긍정 지표는 무조건 유지
 
     return {
-        discoveryFunnel: searchFunnel,    // 이전 discoveryFunnel이라는 키를 프론트 호환성을 위해 유지하되 내용은 검색 퍼널로 교체
+        discoveryFunnel: searchFunnel,
         communityInteractions: communityFunnel, 
         bookingFunnel: {
-            steps: bookingSteps,
+            steps: bookingStepsFull,
             final: bookingFinal
         }
     };
