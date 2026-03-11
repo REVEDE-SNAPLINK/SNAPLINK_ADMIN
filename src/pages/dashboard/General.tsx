@@ -3,7 +3,6 @@ import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { MetricCard } from '@/components/dashboard/MetricCard';
 import { StickinessGauge } from '@/components/dashboard/StickinessGauge';
 import { CohortTable } from '@/components/dashboard/CohortTable';
-import { TraditionalFunnel } from '@/components/dashboard/TraditionalFunnel';
 import { getGeneralKPI } from '@/api/analytics';
 import {
     XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area,
@@ -11,6 +10,7 @@ import {
 } from 'recharts';
 
 export default function GeneralDashboard() {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [data, setData] = useState<any>(null);
     const [filters, setFilters] = useState({ period: '7d', platform: 'all', userType: 'all', startDate: '', endDate: '' });
 
@@ -18,6 +18,7 @@ export default function GeneralDashboard() {
         getGeneralKPI(filters.period, filters.platform, filters.userType, filters.startDate, filters.endDate).then(setData);
     }, [filters]);
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handleFilterChange = (newFilter: any) => {
         setFilters(prev => ({ ...prev, ...newFilter }));
     };
@@ -108,17 +109,7 @@ export default function GeneralDashboard() {
                 </div>
             </div>
 
-            {/* Screens per Session Funnel */}
-            <div className="bg-white p-10 rounded-2xl shadow-sm border border-gray-100 mb-8 max-w-4xl mx-auto">
-                <div className="mb-10 flex justify-between items-start">
-                    <div>
-                        <h3 className="text-2xl font-black text-gray-900 tracking-tight leading-none mb-2">탐색 깊이 (세션당 페이지뷰)</h3>
-                        <p className="text-sm font-bold text-gray-400">앱 진입부터 예약/문의 시작까지의 핵심 퍼널</p>
-                    </div>
-                </div>
-                
-                <TraditionalFunnel items={data.screensFunnel} colorBase={['#3b82f6', '#60a5fa', '#93c5fd', '#bfdbfe', '#dbeafe']} />
-            </div>
+
 
             {/* Bottom Row: Stability & Cohort */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
