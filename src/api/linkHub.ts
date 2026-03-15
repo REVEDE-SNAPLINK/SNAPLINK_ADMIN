@@ -79,6 +79,28 @@ export type UpdateLinkRequest = Partial<
   >
 >;
 
+// --- Channel Meta (UTM 자동 매핑) ---
+
+export const CHANNEL_LABELS: Record<LinkChannel, string> = {
+  blogger:           '블로거',
+  instagram_ads:     '인스타 광고',
+  instagram_profile: '인스타 프로필',
+  creator_personal:  '작가 개인 홍보',
+  app_share:         '앱 내 공유',
+  landing_download:  '랜딩 다운로드',
+  manual_campaign:   '수동 캠페인',
+};
+
+export const CHANNEL_UTM_MAP: Record<LinkChannel, { source: string; medium: string } | null> = {
+  blogger:           { source: 'blogger',   medium: 'referral'    },
+  instagram_ads:     { source: 'instagram', medium: 'paid_social' },
+  instagram_profile: { source: 'instagram', medium: 'social'      },
+  creator_personal:  { source: 'creator',   medium: 'referral'    },
+  app_share:         { source: 'app',       medium: 'share'       },
+  landing_download:  { source: 'landing',   medium: 'cta'         },
+  manual_campaign:   null, // 수동 입력
+};
+
 // --- API Client ---
 
 const BASE_URL = 'https://go.snaplink.run';
@@ -90,7 +112,6 @@ const linkHubApi = axios.create({
   },
 });
 
-// Add request interceptor for authentication
 linkHubApi.interceptors.request.use(async (config) => {
   const { useAuthStore } = await import('@/store/authStore');
   const accessToken = await useAuthStore.getState().getAccessToken();
@@ -136,4 +157,11 @@ export const updateLink = async (code: string, payload: UpdateLinkRequest): Prom
 export const deactivateLink = async (code: string): Promise<LinkEntry> => {
   const response = await linkHubApi.delete(`/api/links/${code}`);
   return response.data;
+};
+
+// --- Presets API ---
+
+export const getCampaignPresets = async (): Promise<string[]> => {
+  const response = await linkHubApi.get('/api/presets', { params: { type: 'campaign' } });
+  return (response.data as { items: string[] }).items;
 };
