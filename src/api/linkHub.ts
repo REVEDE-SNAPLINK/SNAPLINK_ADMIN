@@ -159,6 +159,10 @@ export const deactivateLink = async (code: string): Promise<LinkEntry> => {
   return response.data;
 };
 
+export const deleteLinkPermanent = async (code: string): Promise<void> => {
+  await linkHubApi.delete(`/api/links/${code}`, { params: { permanent: 'true' } });
+};
+
 // --- Presets API ---
 
 export const getCampaignPresets = async (): Promise<string[]> => {

@@ -6,7 +6,7 @@ import {
   CheckCircle2, XCircle, Link as LinkIcon, ChevronDown
 } from 'lucide-react';
 import {
-  listLinks, createLink, updateLink, deactivateLink, getCampaignPresets,
+  listLinks, createLink, updateLink, deactivateLink, deleteLinkPermanent, getCampaignPresets,
   CHANNEL_LABELS, CHANNEL_UTM_MAP,
   type LinkEntry, type CreateLinkRequest, type UpdateLinkRequest,
   type TargetType, type LinkChannel, type OwnerType,
@@ -101,6 +101,16 @@ export default function LinksPage() {
     }
   };
 
+  const handleDeletePermanent = async (code: string) => {
+    if (!window.confirm('정말 이 링크를 영구 삭제하시겠습니까? 관련 통계 데이터 추적이 불가능해질 수 있습니다.')) return;
+    try {
+      await deleteLinkPermanent(code);
+      fetchLinks();
+    } catch {
+      alert('링크 삭제에 실패했습니다.');
+    }
+  };
+
   const columns: Column<LinkEntry>[] = [
     {
       header: '라벨 / 이름',
@@ -162,7 +172,7 @@ export default function LinksPage() {
     {
       header: '액션',
       accessor: (item) => (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
           <button
             onClick={(e) => { e.stopPropagation(); setSelectedLink(item); setIsEditModalOpen(true); }}
             className="p-1.5 hover:bg-gray-100 rounded text-gray-500 hover:text-blue-600 transition-colors"
@@ -170,11 +180,19 @@ export default function LinksPage() {
           >
             <Edit2 className="w-4 h-4" />
           </button>
-          {item.isActive && (
+          {item.isActive ? (
             <button
               onClick={(e) => { e.stopPropagation(); handleDeactivate(item.code); }}
-              className="p-1.5 hover:bg-gray-100 rounded text-gray-500 hover:text-red-500 transition-colors"
+              className="p-1.5 hover:bg-gray-100 rounded text-gray-500 hover:text-orange-500 transition-colors"
               title="비활성화"
+            >
+              <XCircle className="w-4 h-4" />
+            </button>
+          ) : (
+            <button
+              onClick={(e) => { e.stopPropagation(); handleDeletePermanent(item.code); }}
+              className="p-1.5 hover:bg-gray-100 rounded text-gray-400 hover:text-red-500 transition-colors"
+              title="영구 삭제"
             >
               <Trash2 className="w-4 h-4" />
             </button>
@@ -318,12 +336,22 @@ export default function LinksPage() {
                   >
                     수정하기
                   </button>
-                  {selectedLink.isActive && (
+                  {selectedLink.isActive ? (
                     <button
                       onClick={() => handleDeactivate(selectedLink.code)}
-                      className="px-6 py-3 border border-red-200 text-red-600 rounded-xl font-bold hover:bg-red-50 transition-colors"
+                      className="px-6 py-3 border border-orange-200 text-orange-600 rounded-xl font-bold hover:bg-orange-50 transition-colors"
                     >
                       비활성화
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        handleDeletePermanent(selectedLink.code);
+                        setIsDetailDrawerOpen(false);
+                      }}
+                      className="px-6 py-3 border border-red-200 text-red-600 rounded-xl font-bold hover:bg-red-50 transition-colors"
+                    >
+                      영구 삭제
                     </button>
                   )}
                 </div>
