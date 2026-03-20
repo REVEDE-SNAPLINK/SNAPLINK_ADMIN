@@ -112,11 +112,10 @@ const linkHubApi = axios.create({
   },
 });
 
-linkHubApi.interceptors.request.use(async (config) => {
-  const { useAuthStore } = await import('@/store/authStore');
-  const accessToken = await useAuthStore.getState().getAccessToken();
-  if (accessToken) {
-    config.headers.Authorization = `Bearer ${accessToken}`;
+linkHubApi.interceptors.request.use((config) => {
+  const apiKey = process.env.LINK_HUB_API_KEY;
+  if (apiKey) {
+    config.headers.Authorization = `Bearer ${apiKey}`;
   }
   return config;
 }, (error) => {
