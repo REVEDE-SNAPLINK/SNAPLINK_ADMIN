@@ -534,16 +534,19 @@ function LinkForm({
                 onChange={e => setFormData({ ...formData, targetId: e.target.value })}
               />
             </FormItem>
-          ) : (
-            <FormItem label="상세 경로 (Path)" required={formData.targetType === 'landing'}>
-              <input
-                className="w-full border border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-[#00A980]"
-                placeholder="예: /landing/main"
-                value={formData.path}
-                onChange={e => setFormData({ ...formData, path: e.target.value })}
-              />
+          ) : formData.targetType === 'store' ? (
+            <FormItem label="목적지">
+              <div className="w-full border border-gray-100 rounded-xl px-4 py-3 text-sm text-gray-400 bg-gray-50">
+                App Store / Play Store (자동)
+              </div>
             </FormItem>
-          )}
+          ) : formData.targetType === 'landing' ? (
+            <FormItem label="목적지">
+              <div className="w-full border border-gray-100 rounded-xl px-4 py-3 text-sm text-gray-400 bg-gray-50">
+                snaplink.run 랜딩 페이지 (자동)
+              </div>
+            </FormItem>
+          ) : null}
         </div>
       </div>
 
