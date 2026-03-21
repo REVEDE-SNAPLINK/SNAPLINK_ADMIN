@@ -103,23 +103,10 @@ export const CHANNEL_UTM_MAP: Record<LinkChannel, { source: string; medium: stri
 
 // --- API Client ---
 
-const BASE_URL = 'https://go.snaplink.run';
-
 const linkHubApi = axios.create({
-  baseURL: BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
-});
-
-linkHubApi.interceptors.request.use((config) => {
-  const apiKey = process.env.LINK_HUB_API_KEY;
-  if (apiKey) {
-    config.headers.Authorization = `Bearer ${apiKey}`;
-  }
-  return config;
-}, (error) => {
-  return Promise.reject(error);
 });
 
 export const listLinks = async (params?: {
