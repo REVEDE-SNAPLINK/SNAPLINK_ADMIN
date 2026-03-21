@@ -20,7 +20,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return;
   }
 
-  const { ...restQuery } = req.query;
+  const restQuery = Object.fromEntries(Object.entries(req.query).filter(([k]) => k !== 'code'));
   const query = new URLSearchParams(restQuery as Record<string, string>).toString();
   const upstreamUrl = `${LINK_HUB_BASE}/api/links/${code}${query ? `?${query}` : ''}`;
 
