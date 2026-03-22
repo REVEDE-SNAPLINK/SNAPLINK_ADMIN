@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import PageLayout from '@/layouts/PageLayout';
 import { Table, type Column } from '@/components/common/Table';
@@ -476,13 +476,12 @@ function LinkForm({
     }));
   };
 
-  const handleCampaignFocus = () => {
-    if (campaignWrapperRef.current) {
+  useLayoutEffect(() => {
+    if (showCampaignDropdown && campaignWrapperRef.current) {
       const rect = campaignWrapperRef.current.getBoundingClientRect();
       setDropdownPos({ top: rect.bottom + 4, left: rect.left, width: rect.width });
     }
-    setShowCampaignDropdown(true);
-  };
+  }, [showCampaignDropdown]);
 
   const isInternalTarget = ['photographer_profile', 'portfolio_post', 'community_post'].includes(formData.targetType);
   const isManualChannel = formData.channel === 'manual_campaign';
@@ -520,18 +519,21 @@ function LinkForm({
         </h4>
         <div className="grid grid-cols-2 gap-6">
           <FormItem label="Target Type" required disabled={isEdit}>
-            <select
-              className="w-full border border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-[#00A980] bg-white disabled:bg-gray-100"
-              disabled={isEdit}
-              value={formData.targetType}
-              onChange={e => setFormData({ ...formData, targetType: e.target.value as TargetType, targetId: '', path: '' })}
-            >
-              <option value="photographer_profile">작가 프로필</option>
-              <option value="portfolio_post">포트폴리오</option>
-              <option value="community_post">커뮤니티 글</option>
-              <option value="landing">랜딩 페이지</option>
-              <option value="store">스토어</option>
-            </select>
+            <div className="relative">
+              <select
+                className="w-full border border-gray-200 rounded-xl px-4 py-3 pr-10 outline-none focus:border-[#00A980] bg-white disabled:bg-gray-100 appearance-none"
+                disabled={isEdit}
+                value={formData.targetType}
+                onChange={e => setFormData({ ...formData, targetType: e.target.value as TargetType, targetId: '', path: '' })}
+              >
+                <option value="photographer_profile">작가 프로필</option>
+                <option value="portfolio_post">포트폴리오</option>
+                <option value="community_post">커뮤니티 글</option>
+                <option value="landing">랜딩 페이지</option>
+                <option value="store">스토어</option>
+              </select>
+              <ChevronDown className="absolute right-3 top-3.5 w-4 h-4 text-gray-400 pointer-events-none" />
+            </div>
           </FormItem>
 
           {isInternalTarget ? (
@@ -566,16 +568,19 @@ function LinkForm({
         <h4 className="text-xs font-bold text-orange-500 uppercase tracking-widest mb-4">유입 채널</h4>
         <div className="grid grid-cols-2 gap-6">
           <FormItem label="채널 선택" required disabled={isEdit}>
-            <select
-              className="w-full border border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-[#00A980] bg-white disabled:bg-gray-100"
-              disabled={isEdit}
-              value={formData.channel}
-              onChange={e => handleChannelChange(e.target.value as LinkChannel)}
-            >
-              {(Object.entries(CHANNEL_LABELS) as [LinkChannel, string][]).map(([value, label]) => (
-                <option key={value} value={value}>{label}</option>
-              ))}
-            </select>
+            <div className="relative">
+              <select
+                className="w-full border border-gray-200 rounded-xl px-4 py-3 pr-10 outline-none focus:border-[#00A980] bg-white disabled:bg-gray-100 appearance-none"
+                disabled={isEdit}
+                value={formData.channel}
+                onChange={e => handleChannelChange(e.target.value as LinkChannel)}
+              >
+                {(Object.entries(CHANNEL_LABELS) as [LinkChannel, string][]).map(([value, label]) => (
+                  <option key={value} value={value}>{label}</option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-3 top-3.5 w-4 h-4 text-gray-400 pointer-events-none" />
+            </div>
           </FormItem>
 
           <FormItem
@@ -640,7 +645,7 @@ function LinkForm({
                   setFormData({ ...formData, utmCampaign: e.target.value });
                   setShowCampaignDropdown(true);
                 }}
-                onFocus={handleCampaignFocus}
+                onFocus={() => setShowCampaignDropdown(true)}
                 onBlur={() => setTimeout(() => setShowCampaignDropdown(false), 150)}
               />
               <ChevronDown className="absolute right-3 top-3.5 w-4 h-4 text-gray-400 pointer-events-none" />
