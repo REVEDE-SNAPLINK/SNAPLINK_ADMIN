@@ -371,7 +371,7 @@ export default function LinksPage() {
                         onClick={() => handleActivate(selectedLink.code)}
                         className="px-6 py-3 border border-green-200 text-green-600 rounded-xl font-bold hover:bg-green-50 transition-colors"
                       >
-                        다시 활성화
+                        활성화
                       </button>
                       <button
                         onClick={() => handleDeletePermanent(selectedLink.code)}
