@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import PageLayout from '@/layouts/PageLayout';
 import { Table, type Column } from '@/components/common/Table';
 import {
@@ -450,7 +451,8 @@ function LinkForm({
 
   const [campaignPresets, setCampaignPresets] = useState<string[]>([]);
   const [showCampaignDropdown, setShowCampaignDropdown] = useState(false);
-  const campaignInputRef = useRef<HTMLInputElement>(null);
+  const campaignWrapperRef = useRef<HTMLDivElement>(null);
+  const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0, width: 0 });
 
   useEffect(() => {
     getCampaignPresets()
@@ -472,6 +474,14 @@ function LinkForm({
       utmSource: utm?.source ?? prev.utmSource,
       utmMedium: utm?.medium ?? prev.utmMedium,
     }));
+  };
+
+  const handleCampaignFocus = () => {
+    if (campaignWrapperRef.current) {
+      const rect = campaignWrapperRef.current.getBoundingClientRect();
+      setDropdownPos({ top: rect.bottom + 4, left: rect.left, width: rect.width });
+    }
+    setShowCampaignDropdown(true);
   };
 
   const isInternalTarget = ['photographer_profile', 'portfolio_post', 'community_post'].includes(formData.targetType);
@@ -534,19 +544,20 @@ function LinkForm({
                 onChange={e => setFormData({ ...formData, targetId: e.target.value })}
               />
             </FormItem>
-          ) : formData.targetType === 'store' ? (
+          ) : (
             <FormItem label="목적지">
-              <div className="w-full border border-gray-100 rounded-xl px-4 py-3 text-sm text-gray-400 bg-gray-50">
-                App Store / Play Store (자동)
-              </div>
+              <input
+                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-400 bg-gray-50 cursor-not-allowed"
+                disabled
+                value={
+                  formData.targetType === 'store'
+                    ? 'App Store / Play Store (자동)'
+                    : 'snaplink.run 랜딩 페이지 (자동)'
+                }
+                readOnly
+              />
             </FormItem>
-          ) : formData.targetType === 'landing' ? (
-            <FormItem label="목적지">
-              <div className="w-full border border-gray-100 rounded-xl px-4 py-3 text-sm text-gray-400 bg-gray-50">
-                snaplink.run 랜딩 페이지 (자동)
-              </div>
-            </FormItem>
-          ) : null}
+          )}
         </div>
       </div>
 
@@ -567,7 +578,10 @@ function LinkForm({
             </select>
           </FormItem>
 
-          <FormItem label="소유자 ID (선택)">
+          <FormItem
+            label="소유자 ID"
+            tooltip="이 링크를 발행한 주체의 식별자입니다. 블로거 채널이면 블로거 계정 ID, 작가 채널이면 작가 ID 등을 입력합니다. 유입 경로별 성과 분석에 활용됩니다."
+          >
             <input
               className="w-full border border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-[#00A980]"
               placeholder="예: blogger_anna"
@@ -613,8 +627,11 @@ function LinkForm({
         <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">캠페인 정보</h4>
         <div className="grid grid-cols-2 gap-6">
           {/* Campaign 자동완성 */}
-          <FormItem label="캠페인명 (UTM Campaign)">
-            <div className="relative" ref={campaignInputRef as React.RefObject<HTMLDivElement>}>
+          <FormItem
+            label="캠페인명"
+            tooltip="Google Analytics의 utm_campaign 값입니다. 같은 캠페인에 속한 링크를 묶어 성과를 분석할 수 있습니다. 소문자와 언더스코어 권장 (예: spring_promo_2503)"
+          >
+            <div className="relative" ref={campaignWrapperRef}>
               <input
                 className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#00A980] pr-10"
                 placeholder="spring_promo_2503"
@@ -623,31 +640,38 @@ function LinkForm({
                   setFormData({ ...formData, utmCampaign: e.target.value });
                   setShowCampaignDropdown(true);
                 }}
-                onFocus={() => setShowCampaignDropdown(true)}
+                onFocus={handleCampaignFocus}
                 onBlur={() => setTimeout(() => setShowCampaignDropdown(false), 150)}
               />
               <ChevronDown className="absolute right-3 top-3.5 w-4 h-4 text-gray-400 pointer-events-none" />
-              {showCampaignDropdown && filteredPresets.length > 0 && (
-                <div className="absolute z-20 top-full mt-1 left-0 right-0 bg-white rounded-xl border border-gray-200 shadow-lg max-h-[180px] overflow-y-auto">
-                  {filteredPresets.map(preset => (
-                    <button
-                      key={preset}
-                      type="button"
-                      className="w-full text-left px-4 py-2.5 text-sm hover:bg-[#00A980]/10 text-gray-700 transition-colors"
-                      onMouseDown={() => {
-                        setFormData({ ...formData, utmCampaign: preset });
-                        setShowCampaignDropdown(false);
-                      }}
-                    >
-                      {preset}
-                    </button>
-                  ))}
-                </div>
-              )}
             </div>
+            {showCampaignDropdown && filteredPresets.length > 0 && createPortal(
+              <div
+                style={{ position: 'fixed', top: dropdownPos.top, left: dropdownPos.left, width: dropdownPos.width, zIndex: 9999 }}
+                className="bg-white rounded-xl border border-gray-200 shadow-lg max-h-[180px] overflow-y-auto"
+              >
+                {filteredPresets.map(preset => (
+                  <button
+                    key={preset}
+                    type="button"
+                    className="w-full text-left px-4 py-2.5 text-sm hover:bg-[#00A980]/10 text-gray-700 transition-colors"
+                    onMouseDown={() => {
+                      setFormData({ ...formData, utmCampaign: preset });
+                      setShowCampaignDropdown(false);
+                    }}
+                  >
+                    {preset}
+                  </button>
+                ))}
+              </div>,
+              document.body
+            )}
           </FormItem>
 
-          <FormItem label="콘텐츠 식별자 (UTM Content)">
+          <FormItem
+            label="콘텐츠 식별자"
+            tooltip="Google Analytics의 utm_content 값입니다. 같은 캠페인 내에서 배너 위치, 소재, 버튼 등을 구분할 때 사용합니다. A/B 테스트에 유용합니다. (예: cta_top_banner, story_ad_v2)"
+          >
             <input
               className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#00A980]"
               placeholder="cta_top_banner"
@@ -681,11 +705,24 @@ function LinkForm({
 
 // --- UI Helpers ---
 
-function FormItem({ label, children, required, disabled }: { label: string, children: React.ReactNode, required?: boolean, disabled?: boolean }) {
+function Tooltip({ text }: { text: string }) {
+  return (
+    <span className="relative group ml-1.5 inline-flex items-center">
+      <span className="w-[15px] h-[15px] rounded-full bg-gray-200 text-gray-500 text-[10px] font-bold flex items-center justify-center cursor-help select-none">?</span>
+      <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-60 bg-gray-800 text-white text-xs rounded-xl px-3 py-2.5 hidden group-hover:block z-50 pointer-events-none leading-relaxed shadow-xl">
+        {text}
+        <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-800" />
+      </span>
+    </span>
+  );
+}
+
+function FormItem({ label, children, required, disabled, tooltip }: { label: string, children: React.ReactNode, required?: boolean, disabled?: boolean, tooltip?: string }) {
   return (
     <div className={`flex flex-col gap-2 ${disabled ? 'opacity-60' : ''}`}>
-      <label className="text-sm font-bold text-gray-700 ml-1">
-        {label} {required && <span className="text-red-500">*</span>}
+      <label className="text-sm font-bold text-gray-700 ml-1 flex items-center">
+        {label} {required && <span className="text-red-500 ml-0.5">*</span>}
+        {tooltip && <Tooltip text={tooltip} />}
       </label>
       {children}
     </div>
