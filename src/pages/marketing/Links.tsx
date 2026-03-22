@@ -645,12 +645,12 @@ function LinkForm({
               />
               <ChevronDown className="absolute right-3 top-3.5 w-4 h-4 text-gray-400 pointer-events-none" />
             </div>
-            {showCampaignDropdown && filteredPresets.length > 0 && createPortal(
+            {showCampaignDropdown && createPortal(
               <div
                 style={{ position: 'fixed', top: dropdownPos.top, left: dropdownPos.left, width: dropdownPos.width, zIndex: 9999 }}
                 className="bg-white rounded-xl border border-gray-200 shadow-lg max-h-[180px] overflow-y-auto"
               >
-                {filteredPresets.map(preset => (
+                {filteredPresets.length > 0 ? filteredPresets.map(preset => (
                   <button
                     key={preset}
                     type="button"
@@ -662,7 +662,9 @@ function LinkForm({
                   >
                     {preset}
                   </button>
-                ))}
+                )) : (
+                  <div className="px-4 py-3 text-sm text-gray-400">저장된 캠페인명 없음</div>
+                )}
               </div>,
               document.body
             )}
@@ -706,13 +708,36 @@ function LinkForm({
 // --- UI Helpers ---
 
 function Tooltip({ text }: { text: string }) {
+  const [visible, setVisible] = useState(false);
+  const [pos, setPos] = useState({ top: 0, left: 0 });
+  const ref = useRef<HTMLSpanElement>(null);
+
+  const show = () => {
+    if (ref.current) {
+      const rect = ref.current.getBoundingClientRect();
+      setPos({ top: rect.top, left: rect.left + rect.width / 2 });
+    }
+    setVisible(true);
+  };
+
   return (
-    <span className="relative group ml-1.5 inline-flex items-center">
-      <span className="w-[15px] h-[15px] rounded-full bg-gray-200 text-gray-500 text-[10px] font-bold flex items-center justify-center cursor-help select-none">?</span>
-      <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-60 bg-gray-800 text-white text-xs rounded-xl px-3 py-2.5 hidden group-hover:block z-50 pointer-events-none leading-relaxed shadow-xl">
-        {text}
-        <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-800" />
-      </span>
+    <span className="ml-1.5 inline-flex items-center">
+      <span
+        ref={ref}
+        className="w-[15px] h-[15px] rounded-full bg-gray-200 text-gray-500 text-[10px] font-bold flex items-center justify-center cursor-help select-none"
+        onMouseEnter={show}
+        onMouseLeave={() => setVisible(false)}
+      >?</span>
+      {visible && createPortal(
+        <div
+          style={{ position: 'fixed', top: pos.top, left: pos.left, transform: 'translate(-50%, calc(-100% - 8px))', zIndex: 9999 }}
+          className="w-60 bg-gray-800 text-white text-xs rounded-xl px-3 py-2.5 leading-relaxed shadow-xl pointer-events-none"
+        >
+          {text}
+          <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-800" />
+        </div>,
+        document.body
+      )}
     </span>
   );
 }
