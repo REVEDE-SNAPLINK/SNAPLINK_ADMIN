@@ -6,7 +6,52 @@ import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
     PieChart, Pie, Legend, LabelList, AreaChart, Area
 } from 'recharts';
-import { Link2, TrendingUp, Users, Target, Layers } from 'lucide-react';
+import { Link2, TrendingUp, Users, Layers } from 'lucide-react';
+
+// --- Types ---
+
+interface AcquisitionTrend {
+    name: string;
+    installs: number;
+    opens: number;
+    signups: number;
+}
+
+interface AcquisitionChannel {
+    name: string;
+    value: number;
+    conversionRate: number;
+}
+
+interface AcquisitionActivation {
+    name: string;
+    value: number;
+}
+
+interface AcquisitionLinkRow {
+    name: string;
+    users?: number;
+    sessions?: number;
+    conversionRate?: number;
+    source?: string;
+    channel?: string;
+}
+
+interface AcquisitionData {
+    trend: AcquisitionTrend[];
+    channels: AcquisitionChannel[];
+    activation: AcquisitionActivation[];
+    links: AcquisitionLinkRow[];
+}
+
+interface EnrichedLink extends AcquisitionLinkRow {
+    displayName: string;
+    campaign: string | null;
+    targetType?: TargetType;
+    ownerId?: string;
+    isActive?: boolean;
+    hasLinkMeta: boolean;
+}
 
 // --- Constants ---
 
@@ -68,12 +113,12 @@ function SectionCard({ title, sub, badge, children }: { title: string; sub?: str
 // --- Main Component ---
 
 export default function AcquisitionDashboard() {
-    const [data, setData] = useState<any>(null);
+    const [data, setData] = useState<AcquisitionData | null>(null);
     const [links, setLinks] = useState<LinkEntry[]>([]);
     const [filters, setFilters] = useState({ period: '7d', platform: 'all', userType: 'all', startDate: '', endDate: '' });
 
     useEffect(() => {
-        getAcquisitionData(filters.period, filters.platform, filters.userType, filters.startDate, filters.endDate).then(setData);
+        getAcquisitionData(filters.period, filters.platform, filters.userType, filters.startDate, filters.endDate).then(res => setData(res as unknown as AcquisitionData));
         listLinks({ isActive: '' }).then(res => setLinks(res.items)).catch(() => setLinks([]));
     }, [filters]);
 
@@ -85,7 +130,7 @@ export default function AcquisitionDashboard() {
 
     // BQ link rows enriched with link-hub metadata
     const enrichedLinks = useMemo(() => {
-        return (data?.links || []).map((row: any) => {
+        return (data?.links || []).map((row: AcquisitionLinkRow) => {
             const meta = trackingMap.get(row.name);
             return {
                 ...row,
@@ -163,7 +208,7 @@ export default function AcquisitionDashboard() {
     // Top-level KPIs from link-hub
     const activeLinks = links.filter(l => l.isActive).length;
     const totalCampaigns = new Set(links.map(l => l.utmCampaign).filter(Boolean)).size;
-    const totalBqUsers = (data?.links || []).reduce((s: number, r: any) => s + (r.users || 0), 0);
+    const totalBqUsers = (data?.links || []).reduce((s: number, r: AcquisitionLinkRow) => s + (r.users || 0), 0);
     const avgConvRate = campaignStats.length > 0
         ? Number((campaignStats.reduce((s, c) => s + c.conversionRate, 0) / campaignStats.length).toFixed(1))
         : 0;
@@ -236,13 +281,13 @@ export default function AcquisitionDashboard() {
                                 <YAxis dataKey="name" type="category" axisLine={false} tickLine={false}
                                     tick={{ fill: '#4b5563', fontSize: 12 }} width={150} />
                                 <Tooltip cursor={{ fill: '#f9fafb' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                    formatter={(v: any) => [v?.toLocaleString() + '명', '유입 유저']} />
+                                    formatter={(v) => [(v as number)?.toLocaleString() + '명', '유입 유저']} />
                                 <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={22}>
-                                    {data.channels?.map((_: any, i: number) => (
+                                    {data.channels?.map((_: AcquisitionChannel, i: number) => (
                                         <Cell key={i} fill={['#00A980', '#3b82f6', '#f59e0b', '#8b5cf6', '#f43f5e', '#06b6d4'][i % 6]} />
                                     ))}
                                     <LabelList dataKey="value" position="right" style={{ fontSize: '12px', fontWeight: '600', fill: '#6b7280' }}
-                                        formatter={(v: any) => v?.toLocaleString()} />
+                                        formatter={(v) => (v as number)?.toLocaleString()} />
                                 </Bar>
                             </BarChart>
                         </ResponsiveContainer>
@@ -345,11 +390,11 @@ export default function AcquisitionDashboard() {
                             <PieChart>
                                 <Pie data={data.activation} cx="50%" cy="50%" innerRadius={65} outerRadius={95}
                                     paddingAngle={8} dataKey="value">
-                                    {data.activation?.map((_: any, i: number) => (
+                                    {data.activation?.map((_: AcquisitionActivation, i: number) => (
                                         <Cell key={i} fill={ACTIVATION_COLORS[i % ACTIVATION_COLORS.length]} />
                                     ))}
                                 </Pie>
-                                <Tooltip formatter={(v: any, n: any) => [v?.toLocaleString() + '명', n]} />
+                                <Tooltip formatter={(v, n) => [(v as number)?.toLocaleString() + '명', n as string]} />
                                 <Legend layout="vertical" align="right" verticalAlign="middle" iconType="circle" />
                             </PieChart>
                         </ResponsiveContainer>
@@ -359,7 +404,7 @@ export default function AcquisitionDashboard() {
                 <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col justify-center">
                     <h3 className="text-base font-bold text-gray-800 mb-5">채널별 유입 요약</h3>
                     <div className="space-y-5">
-                        {data.channels?.slice(0, 5).map((c: any, i: number) => (
+                        {data.channels?.slice(0, 5).map((c: AcquisitionChannel, i: number) => (
                             <div key={c.name} className="flex items-center justify-between gap-4">
                                 <div className="flex items-center gap-3 min-w-0">
                                     <div className="w-3 h-3 rounded-full flex-shrink-0"
@@ -400,7 +445,7 @@ export default function AcquisitionDashboard() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-50">
-                                {enrichedLinks.map((link: any, idx: number) => (
+                                {enrichedLinks.map((link: EnrichedLink, idx: number) => (
                                     <tr key={`${link.name}-${idx}`} className="hover:bg-gray-50 transition-colors">
                                         <td className="py-3.5 pl-2">
                                             <div className="font-semibold text-gray-900 text-sm">{link.displayName}</div>
