@@ -265,11 +265,12 @@ export const mapAcquisitionData = (trendRows: TrendRow[], channelRows: ChannelRo
                 name: c.trackingCode || c.campaign,
                 source: c.rawSource === '(direct)' ? '직접 유입 / 스토어 검색' : c.rawSource,
                 users: c.value,
+                sessions: c.sessions,
                 conversionRate: c.conversionRate,
                 status: c.conversionRate > 10 ? '우수' : c.conversionRate > 5 ? '보통' : '낮음'
             }))
             .sort((a, b) => b.users - a.users)
-            .slice(0, 15)
+            .slice(0, 50)
     };
 };
 
