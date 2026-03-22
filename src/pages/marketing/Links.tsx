@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef, useLayoutEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import PageLayout from '@/layouts/PageLayout';
 import { Table, type Column } from '@/components/common/Table';
@@ -96,7 +96,8 @@ export default function LinksPage() {
     if (!window.confirm('정말 이 링크를 비활성화하시겠습니까?')) return;
     try {
       await deactivateLink(code);
-      fetchLinks();
+      setLinks(prev => prev.map(l => l.code === code ? { ...l, isActive: false } : l));
+      setSelectedLink(prev => prev?.code === code ? { ...prev, isActive: false } : prev);
     } catch {
       alert('링크 비활성화에 실패했습니다.');
     }
@@ -106,7 +107,8 @@ export default function LinksPage() {
     if (!window.confirm('정말 이 링크를 영구 삭제하시겠습니까? 관련 통계 데이터 추적이 불가능해질 수 있습니다.')) return;
     try {
       await deleteLinkPermanent(code);
-      fetchLinks();
+      setLinks(prev => prev.filter(l => l.code !== code));
+      if (selectedLink?.code === code) setIsDetailDrawerOpen(false);
     } catch {
       alert('링크 삭제에 실패했습니다.');
     }
@@ -383,10 +385,12 @@ export default function LinksPage() {
                     if (isCreateModalOpen) {
                       const result = await createLink(payload as CreateLinkRequest);
                       alert(`링크가 생성되었습니다!\n코드: ${result.code}\nTracking: ${result.trackingCode}`);
+                      fetchLinks();
                     } else {
-                      await updateLink(selectedLink!.code, payload as UpdateLinkRequest);
+                      const updated = await updateLink(selectedLink!.code, payload as UpdateLinkRequest);
+                      setLinks(prev => prev.map(l => l.code === updated.code ? updated : l));
+                      setSelectedLink(updated);
                     }
-                    fetchLinks();
                     setIsCreateModalOpen(false);
                     setIsEditModalOpen(false);
                   } catch {
@@ -457,7 +461,7 @@ function LinkForm({
   useEffect(() => {
     getCampaignPresets()
       .then(setCampaignPresets)
-      .catch(() => {/* 프리셋 로드 실패는 무시 */});
+      .catch((err) => console.error('[getCampaignPresets] failed:', err));
   }, []);
 
   const filteredPresets = campaignPresets.filter(p =>
@@ -476,12 +480,13 @@ function LinkForm({
     }));
   };
 
-  useLayoutEffect(() => {
-    if (showCampaignDropdown && campaignWrapperRef.current) {
+  const handleCampaignFocus = () => {
+    if (campaignWrapperRef.current) {
       const rect = campaignWrapperRef.current.getBoundingClientRect();
       setDropdownPos({ top: rect.bottom + 4, left: rect.left, width: rect.width });
     }
-  }, [showCampaignDropdown]);
+    setShowCampaignDropdown(true);
+  };
 
   const isInternalTarget = ['photographer_profile', 'portfolio_post', 'community_post'].includes(formData.targetType);
   const isManualChannel = formData.channel === 'manual_campaign';
@@ -532,7 +537,7 @@ function LinkForm({
                 <option value="landing">랜딩 페이지</option>
                 <option value="store">스토어</option>
               </select>
-              <ChevronDown className="absolute right-3 top-3.5 w-4 h-4 text-gray-400 pointer-events-none" />
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
             </div>
           </FormItem>
 
@@ -579,7 +584,7 @@ function LinkForm({
                   <option key={value} value={value}>{label}</option>
                 ))}
               </select>
-              <ChevronDown className="absolute right-3 top-3.5 w-4 h-4 text-gray-400 pointer-events-none" />
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
             </div>
           </FormItem>
 
@@ -645,14 +650,14 @@ function LinkForm({
                   setFormData({ ...formData, utmCampaign: e.target.value });
                   setShowCampaignDropdown(true);
                 }}
-                onFocus={() => setShowCampaignDropdown(true)}
+                onFocus={handleCampaignFocus}
                 onBlur={() => setTimeout(() => setShowCampaignDropdown(false), 150)}
               />
-              <ChevronDown className="absolute right-3 top-3.5 w-4 h-4 text-gray-400 pointer-events-none" />
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
             </div>
             {showCampaignDropdown && createPortal(
               <div
-                style={{ position: 'fixed', top: dropdownPos.top, left: dropdownPos.left, width: dropdownPos.width, zIndex: 9999 }}
+                style={{ position: 'fixed', top: dropdownPos.top, left: dropdownPos.left, width: dropdownPos.width || 'auto', minWidth: 200, zIndex: 9999 }}
                 className="bg-white rounded-xl border border-gray-200 shadow-lg max-h-[180px] overflow-y-auto"
               >
                 {filteredPresets.length > 0 ? filteredPresets.map(preset => (
