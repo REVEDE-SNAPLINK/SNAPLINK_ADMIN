@@ -103,6 +103,16 @@ export default function LinksPage() {
     }
   };
 
+  const handleActivate = async (code: string) => {
+    try {
+      await updateLink(code, { isActive: true });
+      setLinks(prev => prev.map(l => l.code === code ? { ...l, isActive: true } : l));
+      setSelectedLink(prev => prev?.code === code ? { ...prev, isActive: true } : prev);
+    } catch {
+      alert('링크 활성화에 실패했습니다.');
+    }
+  };
+
   const handleDeletePermanent = async (code: string) => {
     if (!window.confirm('정말 이 링크를 영구 삭제하시겠습니까? 관련 통계 데이터 추적이 불가능해질 수 있습니다.')) return;
     try {
@@ -192,13 +202,22 @@ export default function LinksPage() {
               <XCircle className="w-4 h-4" />
             </button>
           ) : (
-            <button
-              onClick={(e) => { e.stopPropagation(); handleDeletePermanent(item.code); }}
-              className="p-1.5 hover:bg-gray-100 rounded text-gray-400 hover:text-red-500 transition-colors"
-              title="영구 삭제"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
+            <>
+              <button
+                onClick={(e) => { e.stopPropagation(); handleActivate(item.code); }}
+                className="p-1.5 hover:bg-gray-100 rounded text-gray-400 hover:text-green-600 transition-colors"
+                title="다시 활성화"
+              >
+                <CheckCircle2 className="w-4 h-4" />
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); handleDeletePermanent(item.code); }}
+                className="p-1.5 hover:bg-gray-100 rounded text-gray-400 hover:text-red-500 transition-colors"
+                title="영구 삭제"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </>
           )}
         </div>
       )
@@ -347,15 +366,20 @@ export default function LinksPage() {
                       비활성화
                     </button>
                   ) : (
-                    <button
-                      onClick={() => {
-                        handleDeletePermanent(selectedLink.code);
-                        setIsDetailDrawerOpen(false);
-                      }}
-                      className="px-6 py-3 border border-red-200 text-red-600 rounded-xl font-bold hover:bg-red-50 transition-colors"
-                    >
-                      영구 삭제
-                    </button>
+                    <>
+                      <button
+                        onClick={() => handleActivate(selectedLink.code)}
+                        className="px-6 py-3 border border-green-200 text-green-600 rounded-xl font-bold hover:bg-green-50 transition-colors"
+                      >
+                        다시 활성화
+                      </button>
+                      <button
+                        onClick={() => handleDeletePermanent(selectedLink.code)}
+                        className="px-6 py-3 border border-red-200 text-red-600 rounded-xl font-bold hover:bg-red-50 transition-colors"
+                      >
+                        영구 삭제
+                      </button>
+                    </>
                   )}
                 </div>
               </div>
