@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import PageLayout from '@/layouts/PageLayout';
 import { Table, type Column } from '@/components/common/Table';
 import {
-  Plus, Copy, ExternalLink, Edit2, Trash2, MoreVertical,
+  Plus, Copy, ExternalLink, Edit2, Trash2, X, 
   CheckCircle2, XCircle, Link as LinkIcon, ChevronDown
 } from 'lucide-react';
 import {
@@ -323,7 +323,7 @@ export default function LinksPage() {
                   <p className="text-gray-400 text-sm font-mono">{selectedLink.code}</p>
                 </div>
                 <button onClick={() => setIsDetailDrawerOpen(false)} className="p-2 hover:bg-gray-100 rounded-lg">
-                  <MoreVertical className="w-6 h-6 text-gray-400 rotate-90" />
+                  <X className="w-6 h-6 text-gray-400 rotate-90" />
                 </button>
               </div>
 
