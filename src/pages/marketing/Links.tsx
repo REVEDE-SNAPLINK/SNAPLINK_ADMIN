@@ -206,7 +206,7 @@ export default function LinksPage() {
               <button
                 onClick={(e) => { e.stopPropagation(); handleActivate(item.code); }}
                 className="p-1.5 hover:bg-gray-100 rounded text-gray-400 hover:text-green-600 transition-colors"
-                title="다시 활성화"
+                title="활성화"
               >
                 <CheckCircle2 className="w-4 h-4" />
               </button>
