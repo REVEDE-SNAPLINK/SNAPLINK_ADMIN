@@ -62,16 +62,19 @@ export const buildGeneralFixedActiveUsersQuery = (platform?: string, userType?: 
  * Install(추정), First Open, Sign-up 일자별 추이
  */
 export const buildAcquisitionTrendQuery = (platform?: string, userType?: string) => `
-    SELECT 
+    SELECT
         event_date as rawDate,
-        -- 설치는 Firebase/GA4에서 별도 install 이벤트가 없을 경우 first_open을 최초 설치로 간주하거나, 
-        -- 실제 'app_install' 이벤트를 사용 (스냅링크는 'app_install' 혹은 'first_open' 활용 시나리오)
         COUNT(IF(event_name = 'first_open', 1, NULL)) as installs,
         COUNT(IF(event_name = 'first_open', 1, NULL)) as first_opens,
-        COUNT(IF(event_name = 'sign_up', 1, NULL)) as sign_ups
+        COUNT(IF(event_name = 'sign_up', 1, NULL)) as sign_ups,
+        COUNT(DISTINCT IF(
+            event_name IN ('photographer_profile_view', 'chat_initiated', 'first_message_sent', 'booking_intent'),
+            user_pseudo_id, NULL
+        )) as activations
     FROM \`${getGa4Table()}\`
     WHERE ${getDateRangeClause()}
-      AND event_name IN ('first_open', 'sign_up', 'app_install')
+      AND event_name IN ('first_open', 'sign_up', 'app_install',
+                         'photographer_profile_view', 'chat_initiated', 'first_message_sent', 'booking_intent')
       AND ${getPlatformClause(platform)}
       AND ${getUserTypeClause(userType)}
     GROUP BY event_date
@@ -132,13 +135,63 @@ export const buildAcquisitionActivationQuery = (platform?: string, userType?: st
           AND event_name IN ('photographer_profile_view', 'booking_intent', 'chat_message_sent')
         GROUP BY user_pseudo_id
     )
-    SELECT 
+    SELECT
         COUNT(DISTINCT n.user_pseudo_id) as total_new_users,
         COUNT(DISTINCT IF(a.did_profile_view, n.user_pseudo_id, NULL)) as act_profile_view,
         COUNT(DISTINCT IF(a.did_booking_intent, n.user_pseudo_id, NULL)) as act_booking_intent,
-        COUNT(DISTINCT IF(a.did_message_sent, n.user_pseudo_id, NULL)) as act_message_sent
+        COUNT(DISTINCT IF(a.did_message_sent, n.user_pseudo_id, NULL)) as act_message_sent,
+        COUNT(DISTINCT IF(
+            a.did_profile_view OR a.did_booking_intent OR a.did_message_sent,
+            n.user_pseudo_id, NULL
+        )) as act_any
     FROM new_users n
     LEFT JOIN user_actions a ON n.user_pseudo_id = a.user_pseudo_id
+`;
+
+/**
+ * 유입 tracking_code 기준 Activation 지표 (deep_link_open attribution 방식)
+ * deep_link_open 이벤트에서 tracking_code를 가져와, 해당 유저의 이후 행동을 추적.
+ * tracking_code를 모든 이벤트에 포함하지 않아도 작동함.
+ */
+export const buildActivationByTrackingCodeQuery = (platform?: string) => `
+    WITH link_opens AS (
+        SELECT DISTINCT
+            user_pseudo_id,
+            ${getEventParamString('tracking_code')} as tracking_code
+        FROM \`${getGa4Table()}\`
+        WHERE ${getDateRangeClause()}
+          AND event_name = 'deep_link_open'
+          AND ${getEventParamString('tracking_code')} IS NOT NULL
+          AND ${getEventParamString('tracking_code')} != ''
+          AND ${getPlatformClause(platform)}
+    ),
+    user_actions AS (
+        SELECT
+            user_pseudo_id,
+            LOGICAL_OR(event_name = 'photographer_profile_view') as did_profile_view,
+            LOGICAL_OR(event_name IN ('chat_initiated', 'first_message_sent', 'chat_message_sent')) as did_chat,
+            LOGICAL_OR(event_name = 'booking_intent') as did_booking
+        FROM \`${getGa4Table()}\`
+        WHERE ${getDateRangeClause()}
+          AND event_name IN ('photographer_profile_view', 'chat_initiated',
+                             'first_message_sent', 'chat_message_sent', 'booking_intent')
+          AND ${getPlatformClause(platform)}
+        GROUP BY user_pseudo_id
+    )
+    SELECT
+        lo.tracking_code,
+        COUNT(DISTINCT lo.user_pseudo_id) as users,
+        COUNT(DISTINCT IF(ua.did_profile_view, lo.user_pseudo_id, NULL)) as profile_view_users,
+        COUNT(DISTINCT IF(ua.did_chat, lo.user_pseudo_id, NULL)) as chat_users,
+        COUNT(DISTINCT IF(ua.did_booking, lo.user_pseudo_id, NULL)) as booking_users,
+        COUNT(DISTINCT IF(
+            ua.did_profile_view OR ua.did_chat OR ua.did_booking,
+            lo.user_pseudo_id, NULL
+        )) as activated_users
+    FROM link_opens lo
+    LEFT JOIN user_actions ua ON lo.user_pseudo_id = ua.user_pseudo_id
+    GROUP BY lo.tracking_code
+    ORDER BY users DESC
 `;
 
 /**

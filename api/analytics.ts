@@ -7,6 +7,7 @@ import {
     buildAcquisitionTrendQuery,
     buildAcquisitionChannelsQuery,
     buildAcquisitionActivationQuery,
+    buildActivationByTrackingCodeQuery,
     buildCreatorQuery,
     buildCrashFreeUsersQuery,
     buildSnapshotFunnelQuery,
@@ -94,16 +95,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
            ACQUISITION
         ===================================================== */
         if (type === 'acquisition') {
-            const [trendRows, channelRows, activationRows] = await Promise.all([
+            const [trendRows, channelRows, activationRows, activationByCodeRows] = await Promise.all([
                 runQuery(buildAcquisitionTrendQuery(platform, userType), params)
                     .catch(e => { console.error('[BQ Error - AcqTrend]', e); return []; }),
                 runQuery(buildAcquisitionChannelsQuery(platform, userType), params)
                     .catch(e => { console.error('[BQ Error - AcqChannels]', e); return []; }),
                 runQuery(buildAcquisitionActivationQuery(platform, userType), params)
-                    .catch(e => { console.error('[BQ Error - AcqActivation]', e); return []; })
+                    .catch(e => { console.error('[BQ Error - AcqActivation]', e); return []; }),
+                runQuery(buildActivationByTrackingCodeQuery(platform), params)
+                    .catch(e => { console.error('[BQ Error - ActivationByCode]', e); return []; }),
             ]);
 
-            res.status(200).json(mapAcquisitionData(trendRows, channelRows, activationRows));
+            res.status(200).json(mapAcquisitionData(trendRows, channelRows, activationRows, activationByCodeRows));
             return;
         }
 

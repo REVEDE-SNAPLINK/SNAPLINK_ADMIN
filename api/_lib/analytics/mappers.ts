@@ -27,6 +27,16 @@ interface TrendRow {
     installs: number | string;
     first_opens: number | string;
     sign_ups: number | string;
+    activations?: number | string;
+}
+
+interface ActivationByCodeRow {
+    tracking_code: string;
+    users: number | string;
+    profile_view_users: number | string;
+    chat_users: number | string;
+    booking_users: number | string;
+    activated_users: number | string;
 }
 
 interface ChannelRow {
@@ -45,6 +55,7 @@ interface ActivationRow {
     act_profile_view: number | string;
     act_booking_intent: number | string;
     act_message_sent: number | string;
+    act_any?: number | string;
 }
 
 interface SnapshotRow {
@@ -177,101 +188,102 @@ export const mapGeneralKPI = (
 /**
  * 획득(Acquisition) 보고서 매퍼
  */
-export const mapAcquisitionData = (trendRows: TrendRow[], channelRows: ChannelRow[], activationRows: ActivationRow[]) => {
-    // 1. 유입 규모 추이 (Line Chart)
+export const mapAcquisitionData = (
+    trendRows: TrendRow[],
+    channelRows: ChannelRow[],
+    activationRows: ActivationRow[],
+    activationByCodeRows: ActivationByCodeRow[] = [],
+) => {
+    // 1. 유입 규모 추이 (activation 추가)
     const trend = trendRows.map(row => ({
-        name: formatDateYYMMDD(row.rawDate).slice(5), // MM-DD
+        name: formatDateYYMMDD(row.rawDate).slice(5),
         installs: Number(row.installs) || 0,
         opens: Number(row.first_opens) || 0,
-        signups: Number(row.sign_ups) || 0
+        signups: Number(row.sign_ups) || 0,
+        activations: Number(row.activations) || 0,
     }));
 
-    // 2. 핵심 서비스 활성화 지표 (Donut Chart)
-    const act = activationRows?.[0] || { total_new_users: 0, act_profile_view: 0, act_booking_intent: 0, act_message_sent: 0 };
-    const totalNew = Number(act.total_new_users) || 1;
-    const activation = [
-        { name: '작가 프로필 탐색', value: Number(act.act_profile_view) || 0, rate: Math.round(((Number(act.act_profile_view) || 0) / totalNew) * 100) },
-        { name: '예약 시도', value: Number(act.act_booking_intent) || 0, rate: Math.round(((Number(act.act_booking_intent) || 0) / totalNew) * 100) },
-        { name: '메시지 전송', value: Number(act.act_message_sent) || 0, rate: Math.round(((Number(act.act_message_sent) || 0) / totalNew) * 100) }
-    ];
+    // 2. 글로벌 활성화 지표
+    const act = activationRows?.[0] || { total_new_users: 0, act_profile_view: 0, act_booking_intent: 0, act_message_sent: 0, act_any: 0 };
+    const newUsers = Number(act.total_new_users) || 0;
+    const activatedUsers = Number(act.act_any) || 0;
+    const profileViewUsers = Number(act.act_profile_view) || 0;
+    const chatUsers = Number(act.act_message_sent) || 0;
+    const bookingUsers = Number(act.act_booking_intent) || 0;
+    const totalUsers = channelRows.reduce((s, r) => s + (Number(r.activeUsers) || 0), 0);
 
-    // 3. 채널 및 링크 성과 (카테고리 매핑 로직 추가 - 스토어 분리)
+    const activation = {
+        totalUsers,
+        newUsers,
+        activatedUsers,
+        activationRate: newUsers > 0 ? Number(((activatedUsers / newUsers) * 100).toFixed(1)) : 0,
+        profileViewUsers,
+        chatUsers,
+        bookingUsers,
+    };
+
+    // 3. activation by tracking_code lookup
+    const activationMap = new Map<string, ActivationByCodeRow>(
+        activationByCodeRows.map(r => [r.tracking_code, r]),
+    );
+
+    // 4. utm_source 기준 채널 집계 (activation 포함)
     const getChannelName = (source: string, medium: string, platform?: string) => {
         const src = source.toLowerCase();
         const med = medium.toLowerCase();
         const plt = (platform || '').toUpperCase();
-
-        // 1순위: 명시적 소셜 확인
         if (src.includes('instagram') || src.includes('facebook') || med.includes('social')) return '인스타그램 / SNS';
         if (src.includes('naver') || src.includes('blog')) return '블로그 체험단';
-
-        // 2순위: (direct) 혹은 스토어 관련 유입을 플랫폼별로 세분화
         if (src === '(direct)' || src.includes('play') || src.includes('store') || src.includes('apple') || src.includes('google')) {
-            if (plt === 'IOS') return 'App Store (iOS 검색/설치)';
-            if (plt === 'ANDROID') return 'Play Store (Android 검색/설치)';
+            if (plt === 'IOS') return 'App Store';
+            if (plt === 'ANDROID') return 'Play Store';
             return '스토어 유입';
         }
-
         if (src.includes('profile')) return '작가 프로필 링크';
-        if (src.includes('post') || src.includes('community')) return '게시물별 고유 링크';
-        if (src.includes('landing')) return '랜딩 페이지 유입';
-
-        return '기타 유입';
+        if (src.includes('post') || src.includes('community')) return '커뮤니티 링크';
+        if (src.includes('landing')) return '랜딩 페이지';
+        if (src.includes('creator')) return '작가 개인 홍보';
+        if (src.includes('blogger')) return '블로거';
+        return '기타';
     };
 
-    const channels = channelRows.map(row => {
-        const sess = Number(row.sessions) || 0;
-        const conv = Number(row.signups) || 0;
-        const rate = sess > 0 ? (conv / sess) * 100 : 0;
-        const channelName = getChannelName(row.sessionSource, row.sessionMedium, row.platform);
+    const channelAccum = new Map<string, { users: number; activatedUsers: number }>();
+    for (const row of channelRows) {
+        const name = getChannelName(row.sessionSource, row.sessionMedium, row.platform);
+        const users = Number(row.activeUsers) || 0;
+        const tc = (row.tracking_code || '').trim();
+        const actData = tc ? activationMap.get(tc) : undefined;
+        const activated = Number(actData?.activated_users) || 0;
 
-        return {
-            name: channelName,
-            rawSource: row.sessionSource,
-            campaign: row.sessionCampaign || '',
-            trackingCode: row.tracking_code || '',
-            value: Number(row.activeUsers) || 0,
-            sessions: sess,
-            conversionRate: Number(rate.toFixed(1))
-        };
-    });
+        const prev = channelAccum.get(name) ?? { users: 0, activatedUsers: 0 };
+        channelAccum.set(name, { users: prev.users + users, activatedUsers: prev.activatedUsers + activated });
+    }
+    const channelStats = Array.from(channelAccum.entries())
+        .map(([name, { users, activatedUsers: activated }]) => ({
+            name,
+            users,
+            activatedUsers: activated,
+            activationRate: users > 0 ? Number(((activated / users) * 100).toFixed(1)) : 0,
+        }))
+        .sort((a, b) => b.users - a.users);
 
-    // 카테고리별 합산
-    const categoryStats = channels.reduce((acc, curr) => {
-        const key = curr.name;
-        if (!acc[key]) {
-            acc[key] = { name: key, value: 0, totalRate: 0, count: 0 };
-        }
-        acc[key].value += curr.value;
-        acc[key].totalRate += curr.conversionRate;
-        acc[key].count += 1;
-        return acc;
-    }, {} as Record<string, { name: string; value: number; totalRate: number; count: number }>);
+    // 5. 링크별 성과 (tracking_code 기준, activation 포함)
+    const links = activationByCodeRows
+        .map(r => ({
+            trackingCode: r.tracking_code,
+            users: Number(r.users) || 0,
+            profileViewUsers: Number(r.profile_view_users) || 0,
+            chatUsers: Number(r.chat_users) || 0,
+            bookingUsers: Number(r.booking_users) || 0,
+            activatedUsers: Number(r.activated_users) || 0,
+            // also carry BQ channel info for frontend to use when link-hub meta is missing
+            sessionSource: channelRows.find(c => c.tracking_code === r.tracking_code)?.sessionSource || '',
+            sessionCampaign: channelRows.find(c => c.tracking_code === r.tracking_code)?.sessionCampaign || '',
+        }))
+        .sort((a, b) => b.users - a.users)
+        .slice(0, 100);
 
-    return {
-        trend,
-        activation,
-        channels: Object.values(categoryStats).map(c => ({
-            name: c.name,
-            value: c.value,
-            conversionRate: Number((c.totalRate / c.count).toFixed(1))
-        })).sort((a, b) => b.value - a.value),
-        links: channels
-            .filter(c =>
-                (c.trackingCode !== '' && c.trackingCode !== '(direct)' && c.trackingCode !== '(not set)') ||
-                (c.campaign !== '(not set)' && c.campaign !== '' && c.campaign !== '(direct)')
-            )
-            .map(c => ({
-                name: c.trackingCode || c.campaign,
-                source: c.rawSource === '(direct)' ? '직접 유입 / 스토어 검색' : c.rawSource,
-                users: c.value,
-                sessions: c.sessions,
-                conversionRate: c.conversionRate,
-                status: c.conversionRate > 10 ? '우수' : c.conversionRate > 5 ? '보통' : '낮음'
-            }))
-            .sort((a, b) => b.users - a.users)
-            .slice(0, 50)
-    };
+    return { trend, activation, channelStats, links };
 };
 
 /**
